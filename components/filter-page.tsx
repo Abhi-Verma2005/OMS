@@ -45,9 +45,31 @@ type Trend = "increasing" | "decreasing" | "stable"
 type BacklinkNature = "do-follow" | "no-follow" | "sponsored"
 type LinkPlacement = "in-content" | "author-bio" | "footer"
 
+// Static list of country names for selection and search
+const COUNTRY_NAMES: string[] = [
+  "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria",
+  "Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+  "Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia",
+  "Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo (Congo-Brazzaville)","Costa Rica",
+  "Côte d’Ivoire","Croatia","Cuba","Cyprus","Czechia","Democratic Republic of the Congo","Denmark","Djibouti","Dominica","Dominican Republic",
+  "Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland",
+  "France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea",
+  "Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq",
+  "Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait",
+  "Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg",
+  "Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico",
+  "Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru",
+  "Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman",
+  "Pakistan","Palau","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar",
+  "Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","São Tomé and Príncipe","Saudi Arabia",
+  "Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa",
+  "South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan",
+  "Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan",
+  "Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City",
+  "Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
+]
+
 type Filters = {
-  websiteUrl: string
-  websiteName: string
   niche: string
   category: string
   language: string
@@ -60,7 +82,7 @@ type Filters = {
   drMax?: number
   spamMax?: number
   spamMin?: number
-  tool?: "Semrush" | "Ahrefs" | "SimilarWeb"
+  tool?: "Semrush" | "Ahrefs"
   semrushAuthorityMin?: number
   semrushOverallTrafficMin?: number
   semrushOrganicTrafficMin?: number
@@ -111,7 +133,6 @@ const allColumns: ColumnConfig[] = [
   { key: 'price', label: 'Price', category: 'pricing' },
   { key: 'priceWithContent', label: 'Price + Content', category: 'pricing' },
   { key: 'traffic', label: 'Overall Traffic', category: 'traffic' },
-  { key: 'organicTraffic', label: 'Organic Traffic', category: 'traffic' },
   { key: 'trend', label: 'Trend', category: 'traffic' },
   { key: 'wordLimit', label: 'Word Limit', category: 'publishing' },
   { key: 'tat', label: 'TAT Days', category: 'publishing' },
@@ -126,8 +147,6 @@ const allColumns: ColumnConfig[] = [
 ]
 
 const defaultFilters: Filters = {
-  websiteUrl: "",
-  websiteName: "",
   niche: "",
   category: "",
   language: "",
@@ -154,8 +173,6 @@ type FilterPebble = {
 
 const filterPebbles: FilterPebble[] = [
   // Basic
-  { key: "websiteUrl", label: "Website URL", icon: <FileStack className="w-3 h-3" />, category: "basic" },
-  { key: "websiteName", label: "Website Name", icon: <FileStack className="w-3 h-3" />, category: "basic" },
   { key: "niche", label: "Niche", icon: <FileStack className="w-3 h-3" />, category: "basic" },
   { key: "category", label: "Category", icon: <FileStack className="w-3 h-3" />, category: "basic" },
   { key: "language", label: "Language", icon: <FileStack className="w-3 h-3" />, category: "basic" },
@@ -172,7 +189,6 @@ const filterPebbles: FilterPebble[] = [
   { key: "semrushAuthorityMin", label: "Semrush Authority", icon: <Cpu className="w-3 h-3" />, category: "traffic" },
   { key: "semrushOverallTrafficMin", label: "Overall Traffic", icon: <Cpu className="w-3 h-3" />, category: "traffic" },
   { key: "semrushOrganicTrafficMin", label: "Organic Traffic", icon: <Cpu className="w-3 h-3" />, category: "traffic" },
-  { key: "targetCountry", label: "Target Country", icon: <Cpu className="w-3 h-3" />, category: "traffic" },
   { key: "trend", label: "Traffic Trend", icon: <Cpu className="w-3 h-3" />, category: "traffic" },
   
   // Publishing
@@ -184,16 +200,6 @@ const filterPebbles: FilterPebble[] = [
   { key: "linkPlacement", label: "Link Placement", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
   { key: "permanence", label: "Permanence", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
   
-  // Quality
-  { key: "sampleUrl", label: "Sample URL", icon: <History className="w-3 h-3" />, category: "quality" },
-  { key: "remarkIncludes", label: "Remark", icon: <History className="w-3 h-3" />, category: "quality" },
-  { key: "lastPublishedAfter", label: "Last Published", icon: <History className="w-3 h-3" />, category: "quality" },
-  { key: "outboundLinkLimitMax", label: "Outbound Links", icon: <History className="w-3 h-3" />, category: "quality" },
-  { key: "guidelinesUrlIncludes", label: "Guidelines", icon: <History className="w-3 h-3" />, category: "quality" },
-  
-  // Additional
-  { key: "disclaimerIncludes", label: "Disclaimer", icon: <CircleEllipsis className="w-3 h-3" />, category: "additional" },
-  { key: "availability", label: "Availability", icon: <CircleEllipsis className="w-3 h-3" />, category: "additional" },
 ]
 
 export default function CompactFilterPage() {
@@ -210,6 +216,9 @@ export default function CompactFilterPage() {
   const [lastFetched, setLastFetched] = useState<Date | null>(null)
   type RowLevel = 1 | 2 | 3 | 4 | 'custom'
   const [rowLevel, setRowLevel] = useState<RowLevel>(2)
+  const [allCountries, setAllCountries] = useState<string[]>(COUNTRY_NAMES)
+  const [countrySearch, setCountrySearch] = useState<string>("")
+  const [searchQuery, setSearchQuery] = useState<string>("")
   
 
   // Row presets: progressively reveal more data
@@ -317,7 +326,129 @@ export default function CompactFilterPage() {
     return () => clearTimeout(timeoutId)
   }, [filters])
 
-  const results = useMemo(() => applyFilters(sites, filters), [sites, filters])
+  const results = useMemo(() => {
+    const filtered = applyFilters(sites, filters)
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return filtered
+    return filtered.filter((s) =>
+      s.name.toLowerCase().includes(q) || s.url.toLowerCase().includes(q)
+    )
+  }, [sites, filters, searchQuery])
+
+  // Initialize search from URL (?q=...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get('q') || ''
+    if (q) setSearchQuery(q)
+  }, [])
+
+  // Persist search to URL without navigation
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    if (searchQuery.trim()) {
+      url.searchParams.set('q', searchQuery.trim())
+    } else {
+      url.searchParams.delete('q')
+    }
+    window.history.replaceState({}, '', url.toString())
+  }, [searchQuery])
+  
+  const availableCountries = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of sites) {
+      const c = s.country?.trim()
+      if (c && c.toLowerCase() !== 'not specified') set.add(c)
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [sites])
+
+  // Static countries are already set; no need for Intl lookup
+
+  const priceBounds = useMemo(() => {
+    if (!sites.length) return { min: 0, max: 1000 }
+    let min = Number.POSITIVE_INFINITY
+    let max = 0
+    for (const s of sites) {
+      const p = s.publishing.price || 0
+      if (p < min) min = p
+      if (p > max) max = p
+    }
+    if (!isFinite(min)) min = 0
+    if (max < min) max = min
+    return { min, max }
+  }, [sites])
+  
+  const daBounds = useMemo(() => {
+    if (!sites.length) return { min: 0, max: 100 }
+    let min = Number.POSITIVE_INFINITY
+    let max = 0
+    for (const s of sites) {
+      const v = s.da || 0
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+    if (!isFinite(min)) min = 0
+    if (max < min) max = min
+    return { min, max }
+  }, [sites])
+
+  const paBounds = useMemo(() => {
+    if (!sites.length) return { min: 0, max: 100 }
+    let min = Number.POSITIVE_INFINITY
+    let max = 0
+    for (const s of sites) {
+      const v = s.pa || 0
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+    if (!isFinite(min)) min = 0
+    if (max < min) max = min
+    return { min, max }
+  }, [sites])
+
+  const drBounds = useMemo(() => {
+    if (!sites.length) return { min: 0, max: 100 }
+    let min = Number.POSITIVE_INFINITY
+    let max = 0
+    for (const s of sites) {
+      const v = s.dr || 0
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+    if (!isFinite(min)) min = 0
+    if (max < min) max = min
+    return { min, max }
+  }, [sites])
+
+  const spamBounds = useMemo(() => {
+    if (!sites.length) return { min: 0, max: 100 }
+    let min = Number.POSITIVE_INFINITY
+    let max = 0
+    for (const s of sites) {
+      const v = s.spamScore || 0
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+    if (!isFinite(min)) min = 0
+    if (max < min) max = min
+    return { min, max }
+  }, [sites])
+  
+  const priceWithContentBounds = useMemo(() => {
+    if (!sites.length) return { min: 0, max: 1500 }
+    let min = Number.POSITIVE_INFINITY
+    let max = 0
+    for (const s of sites) {
+      const p = s.publishing.priceWithContent || 0
+      if (p < min) min = p
+      if (p > max) max = p
+    }
+    if (!isFinite(min)) min = 0
+    if (max < min) max = min
+    return { min, max }
+  }, [sites])
   
   const setNum = (k: keyof Filters, v: string) => {
     if (!loading) {
@@ -377,8 +508,7 @@ export default function CompactFilterPage() {
         chips.push({ key, label, value: String(value) })
       }
     }
-    add("websiteUrl", `URL: ${filters.websiteUrl}`, filters.websiteUrl)
-    add("websiteName", `Name: ${filters.websiteName}`, filters.websiteName)
+    // Website URL/Name removed
     add("niche", `Niche: ${filters.niche}`, filters.niche)
     add("category", `Category: ${filters.category}`, filters.category)
     add("language", `Lang: ${filters.language}`, filters.language)
@@ -395,8 +525,8 @@ export default function CompactFilterPage() {
     add("semrushAuthorityMin", `Semrush Auth ≥ ${filters.semrushAuthorityMin}`, filters.semrushAuthorityMin)
     add("semrushOverallTrafficMin", `Traffic ≥ ${filters.semrushOverallTrafficMin?.toLocaleString()}`, filters.semrushOverallTrafficMin)
     add("semrushOrganicTrafficMin", `Organic ≥ ${filters.semrushOrganicTrafficMin?.toLocaleString()}`, filters.semrushOrganicTrafficMin)
-    add("targetCountry", `Target: ${filters.targetCountry}`, filters.targetCountry)
-    add("targetCountryPctMin", `Target % ≥ ${filters.targetCountryPctMin}`, filters.targetCountryPctMin)
+    // targetCountry removed
+    // targetCountryPctMin retained only if needed elsewhere
     add("trend", `Trend: ${filters.trend}`, filters.trend)
     add("priceMin", `$ ≥ ${filters.priceMin}`, filters.priceMin)
     add("priceMax", `$ ≤ ${filters.priceMax}`, filters.priceMax)
@@ -424,6 +554,9 @@ export default function CompactFilterPage() {
 
   const openFilterModal = (filterKey: keyof Filters) => {
     if (!loading) {
+      if (filterKey === 'country') {
+        setCountrySearch("")
+      }
       setActiveFilterKey(filterKey)
       setFilterModalOpen(true)
     }
@@ -463,7 +596,21 @@ export default function CompactFilterPage() {
       case 'niche':
         return (
           <div>
-            <span className="text-slate-700 dark:text-neutral-300">{site.niche}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {site.niche
+                .split(',')
+                .map((n) => n.trim())
+                .filter(Boolean)
+                .map((n) => (
+                  <Badge
+                    key={n}
+                    variant="secondary"
+                    className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-yellow-500/15 text-yellow-800 border border-yellow-400/30 dark:bg-yellow-400/10 dark:text-yellow-300 dark:border-yellow-400/20"
+                  >
+                    {n}
+                  </Badge>
+                ))}
+            </div>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
               <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
                 <span className="text-slate-400 dark:text-neutral-500">Type:</span> {site.category}
@@ -755,17 +902,358 @@ export default function CompactFilterPage() {
     }
 
     switch (filterKey) {
-      case "websiteUrl":
-      case "websiteName":
+      case "country":
+        return (
+          <div onKeyDown={handleKeyDown}>
+            <Select
+              value={filters.country || ""}
+              onValueChange={(val) => {
+                if (loading) return
+                const next = val === "__ALL__" ? "" : val
+                setFilters((f) => ({ ...f, country: next }))
+              }}
+              disabled={loading}
+            >
+              <SelectTrigger className={styles.select}>
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent className={cn(styles.menu, "p-0 max-h-72 overflow-hidden") }>
+                <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 p-2 border-b border-slate-200 dark:border-neutral-800">
+                  <Input
+                    className={styles.field}
+                    placeholder="Search countries"
+                    value={countrySearch}
+                    onChange={(e) => setCountrySearch(e.target.value)}
+                  />
+                </div>
+                <SelectItem value="__ALL__">All countries</SelectItem>
+                {(() => {
+                  const list = (allCountries.length ? allCountries : availableCountries)
+                    .filter(c => c.toLowerCase().includes(countrySearch.toLowerCase()))
+                  if (list.length === 0) {
+                    return (
+                      <div className="px-3 py-2 text-sm text-slate-500 dark:text-neutral-400">No countries found</div>
+                    )
+                  }
+                  return list.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))
+                })()}
+              </SelectContent>
+            </Select>
+          </div>
+        )
+
+      case "priceMin": {
+        const minVal = filters.priceMin ?? priceBounds.min
+        const maxVal = filters.priceMax ?? priceBounds.max
+        const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
+        return (
+          <div className="space-y-3" onKeyDown={handleKeyDown}>
+            <div className="text-sm text-slate-600 dark:text-neutral-300">Select price range</div>
+            <div className="px-1">
+              <Slider
+                min={priceBounds.min}
+                max={priceBounds.max}
+                value={[minVal, maxVal]}
+                onValueChange={([lo, hi]) => {
+                  if (loading) return
+                  setFilters((f) => ({ ...f, priceMin: lo, priceMax: hi }))
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Min"
+                value={minVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, priceBounds.min, (filters.priceMax ?? priceBounds.max))
+                  setFilters((f) => ({ ...f, priceMin: clamped }))
+                }}
+                disabled={loading}
+              />
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Max"
+                value={maxVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, (filters.priceMin ?? priceBounds.min), priceBounds.max)
+                  setFilters((f) => ({ ...f, priceMax: clamped }))
+                }}
+                disabled={loading}
+              />
+            </div>
+          </div>
+        )
+      }
+
+      case "daMin":
+      case "daMax": {
+        const minVal = filters.daMin ?? daBounds.min
+        const maxVal = filters.daMax ?? daBounds.max
+        const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
+        return (
+          <div className="space-y-3" onKeyDown={handleKeyDown}>
+            <div className="text-sm text-slate-600 dark:text-neutral-300">Select domain authority range</div>
+            <div className="px-1">
+              <Slider
+                min={daBounds.min}
+                max={daBounds.max}
+                value={[minVal, maxVal]}
+                onValueChange={([lo, hi]) => {
+                  if (loading) return
+                  setFilters((f) => ({ ...f, daMin: lo, daMax: hi }))
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Min"
+                value={minVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, daBounds.min, (filters.daMax ?? daBounds.max))
+                  setFilters((f) => ({ ...f, daMin: clamped }))
+                }}
+                disabled={loading}
+              />
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Max"
+                value={maxVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, (filters.daMin ?? daBounds.min), daBounds.max)
+                  setFilters((f) => ({ ...f, daMax: clamped }))
+                }}
+                disabled={loading}
+              />
+            </div>
+          </div>
+        )
+      }
+
+      case "paMin":
+      case "paMax": {
+        const minVal = filters.paMin ?? paBounds.min
+        const maxVal = filters.paMax ?? paBounds.max
+        const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
+        return (
+          <div className="space-y-3" onKeyDown={handleKeyDown}>
+            <div className="text-sm text-slate-600 dark:text-neutral-300">Select page authority range</div>
+            <div className="px-1">
+              <Slider
+                min={paBounds.min}
+                max={paBounds.max}
+                value={[minVal, maxVal]}
+                onValueChange={([lo, hi]) => {
+                  if (loading) return
+                  setFilters((f) => ({ ...f, paMin: lo, paMax: hi }))
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Min"
+                value={minVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, paBounds.min, (filters.paMax ?? paBounds.max))
+                  setFilters((f) => ({ ...f, paMin: clamped }))
+                }}
+                disabled={loading}
+              />
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Max"
+                value={maxVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, (filters.paMin ?? paBounds.min), paBounds.max)
+                  setFilters((f) => ({ ...f, paMax: clamped }))
+                }}
+                disabled={loading}
+              />
+            </div>
+          </div>
+        )
+      }
+
+      case "drMin":
+      case "drMax": {
+        const minVal = filters.drMin ?? drBounds.min
+        const maxVal = filters.drMax ?? drBounds.max
+        const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
+        return (
+          <div className="space-y-3" onKeyDown={handleKeyDown}>
+            <div className="text-sm text-slate-600 dark:text-neutral-300">Select domain rating range</div>
+            <div className="px-1">
+              <Slider
+                min={drBounds.min}
+                max={drBounds.max}
+                value={[minVal, maxVal]}
+                onValueChange={([lo, hi]) => {
+                  if (loading) return
+                  setFilters((f) => ({ ...f, drMin: lo, drMax: hi }))
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Min"
+                value={minVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, drBounds.min, (filters.drMax ?? drBounds.max))
+                  setFilters((f) => ({ ...f, drMin: clamped }))
+                }}
+                disabled={loading}
+              />
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Max"
+                value={maxVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, (filters.drMin ?? drBounds.min), drBounds.max)
+                  setFilters((f) => ({ ...f, drMax: clamped }))
+                }}
+                disabled={loading}
+              />
+            </div>
+          </div>
+        )
+      }
+
+      case "spamMin":
+      case "spamMax": {
+        const minVal = filters.spamMin ?? spamBounds.min
+        const maxVal = filters.spamMax ?? spamBounds.max
+        const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
+        return (
+          <div className="space-y-3" onKeyDown={handleKeyDown}>
+            <div className="text-sm text-slate-600 dark:text-neutral-300">Select spam score range</div>
+            <div className="px-1">
+              <Slider
+                min={spamBounds.min}
+                max={spamBounds.max}
+                value={[minVal, maxVal]}
+                onValueChange={([lo, hi]) => {
+                  if (loading) return
+                  setFilters((f) => ({ ...f, spamMin: lo, spamMax: hi }))
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Min"
+                value={minVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, spamBounds.min, (filters.spamMax ?? spamBounds.max))
+                  setFilters((f) => ({ ...f, spamMin: clamped }))
+                }}
+                disabled={loading}
+              />
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Max"
+                value={maxVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, (filters.spamMin ?? spamBounds.min), spamBounds.max)
+                  setFilters((f) => ({ ...f, spamMax: clamped }))
+                }}
+                disabled={loading}
+              />
+            </div>
+          </div>
+        )
+      }
+
+      case "priceWithContentMin": {
+        const minVal = filters.priceWithContentMin ?? priceWithContentBounds.min
+        const maxVal = filters.priceWithContentMax ?? priceWithContentBounds.max
+        const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
+        return (
+          <div className="space-y-3" onKeyDown={handleKeyDown}>
+            <div className="text-sm text-slate-600 dark:text-neutral-300">Select price with content range</div>
+            <div className="px-1">
+              <Slider
+                min={priceWithContentBounds.min}
+                max={priceWithContentBounds.max}
+                value={[minVal, maxVal]}
+                onValueChange={([lo, hi]) => {
+                  if (loading) return
+                  setFilters((f) => ({ ...f, priceWithContentMin: lo, priceWithContentMax: hi }))
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Min"
+                value={minVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, priceWithContentBounds.min, (filters.priceWithContentMax ?? priceWithContentBounds.max))
+                  setFilters((f) => ({ ...f, priceWithContentMin: clamped }))
+                }}
+                disabled={loading}
+              />
+              <Input
+                className={styles.field}
+                type="number"
+                placeholder="Max"
+                value={maxVal}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (Number.isNaN(v)) return
+                  const clamped = clamp(v, (filters.priceWithContentMin ?? priceWithContentBounds.min), priceWithContentBounds.max)
+                  setFilters((f) => ({ ...f, priceWithContentMax: clamped }))
+                }}
+                disabled={loading}
+              />
+            </div>
+          </div>
+        )
+      }
       case "niche":
       case "category":
       case "language":
-      case "country":
       case "sampleUrl":
       case "remarkIncludes":
       case "guidelinesUrlIncludes":
       case "disclaimerIncludes":
-      case "targetCountry":
         return (
           <Input
             className={styles.field}
@@ -777,15 +1265,7 @@ export default function CompactFilterPage() {
           />
         )
       
-      case "daMin":
-      case "daMax":
-      case "paMin":
-      case "paMax":
-      case "drMin":
-      case "drMax":
-      case "spamMin":
-      case "spamMax":
-      case "priceMin":
+      
       case "priceMax":
       case "semrushAuthorityMin":
       case "semrushOverallTrafficMin":
@@ -827,7 +1307,6 @@ export default function CompactFilterPage() {
               <SelectContent className={styles.menu}>
                 <SelectItem value="Semrush">Semrush</SelectItem>
                 <SelectItem value="Ahrefs">Ahrefs</SelectItem>
-                <SelectItem value="SimilarWeb">SimilarWeb</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1069,10 +1548,29 @@ export default function CompactFilterPage() {
         {/* Active Filters Chips */}
         {activeChips.length > 0 && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-neutral-400">
                 <Filter className="w-4 h-4" />
                 <span className="font-medium">Active Filters ({activeChips.length})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Input
+                    className={cn(styles.field, "h-8 pr-8 text-xs w-64")}
+                    placeholder="Search by website name or URL"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    disabled={loading}
+                  />
+                  {searchQuery && (
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200"
+                      onClick={() => setSearchQuery("")}
+                      aria-label="Clear search"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
               </div>
               <Button 
                 variant="outline" 
@@ -1084,6 +1582,7 @@ export default function CompactFilterPage() {
                 {loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
                 Clear All
               </Button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {activeChips.map((chip) => (
@@ -1427,7 +1926,24 @@ function SiteDetails({ site }: { site: Site }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <InfoCard title="Basic Information">
           <InfoItem label="URL" value={site.url} />
-          <InfoItem label="Niche" value={site.niche} />
+          <div className="flex justify-between items-start">
+            <span className="text-xs text-slate-500 dark:text-neutral-400 flex-shrink-0">Niche</span>
+            <div className="flex flex-wrap gap-1.5 justify-end ml-2">
+              {site.niche
+                .split(',')
+                .map((n) => n.trim())
+                .filter(Boolean)
+                .map((n) => (
+                  <Badge
+                    key={n}
+                    variant="secondary"
+                    className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-yellow-500/15 text-yellow-800 border border-yellow-400/30 dark:bg-yellow-400/10 dark:text-yellow-300 dark:border-yellow-400/20"
+                  >
+                    {n}
+                  </Badge>
+                ))}
+            </div>
+          </div>
           <InfoItem label="Category" value={site.category} />
           <InfoItem label="Language" value={site.language} />
           <InfoItem label="Country" value={site.country} />
@@ -1500,8 +2016,6 @@ function InfoItem({ label, value }: { label: string; value: string }) {
 function applyFilters(list: Site[], f: Filters) {
   return list.filter((s) => {
     const inStr = (a: string, b: string) => a.toLowerCase().includes(b.toLowerCase())
-    if (f.websiteUrl && !inStr(s.url, f.websiteUrl)) return false
-    if (f.websiteName && !inStr(s.name, f.websiteName)) return false
     if (f.niche && !inStr(s.niche, f.niche)) return false
     if (f.category && !inStr(s.category, f.category)) return false
     if (f.language && s.language.toLowerCase() !== f.language.toLowerCase()) return false
