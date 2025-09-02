@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
@@ -15,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { Slider } from "@/components/ui/slider"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   FileStack,
   Fingerprint,
@@ -25,13 +28,19 @@ import {
   Settings,
   X,
   Plus,
-  Filter
+  Filter,
+  Columns3,
+  Eye,
+  EyeOff,
+  Loader2
 } from "lucide-react"
+import { Site, fetchSitesWithFilters, transformAPISiteToSite, APIFilters } from "@/lib/sample-sites"
 
-// Import types and data from sample-sites
-import type { Site } from "@/lib/sample-sites"
-import sites from "@/lib/sample-sites"
+// Site type is now imported from lib/sample-sites
 
+// Mock data removed - now using API
+
+// Mock data generation removed - now using API
 type Trend = "increasing" | "decreasing" | "stable"
 type BacklinkNature = "do-follow" | "no-follow" | "sponsored"
 type LinkPlacement = "in-content" | "author-bio" | "footer"
@@ -81,9 +90,40 @@ type Filters = {
   availability?: boolean
 }
 
+// Column definitions
+type ColumnKey = 'name' | 'niche' | 'category' | 'countryLang' | 'authority' | 'spam' | 'price' | 'priceWithContent' | 'traffic' | 'organicTraffic' | 'semrushAuth' | 'trend' | 'wordLimit' | 'tat' | 'backlinkNature' | 'backlinksAllowed' | 'linkPlacement' | 'permanence' | 'lastPublished' | 'outboundLinks' | 'availability' | 'remark'
 
+type ColumnConfig = {
+  key: ColumnKey
+  label: string
+  width?: string
+  category: 'basic' | 'authority' | 'pricing' | 'traffic' | 'publishing' | 'quality' | 'status'
+}
 
-
+const allColumns: ColumnConfig[] = [
+  { key: 'name', label: 'Name', category: 'basic' },
+  { key: 'niche', label: 'Niche', category: 'basic' },
+  { key: 'category', label: 'Category', category: 'basic' },
+  { key: 'countryLang', label: 'Country/Lang', category: 'basic' },
+  { key: 'authority', label: 'Authority', category: 'authority' },
+  { key: 'spam', label: 'Spam', category: 'authority' },
+  { key: 'semrushAuth', label: 'Semrush Auth', category: 'authority' },
+  { key: 'price', label: 'Price', category: 'pricing' },
+  { key: 'priceWithContent', label: 'Price + Content', category: 'pricing' },
+  { key: 'traffic', label: 'Overall Traffic', category: 'traffic' },
+  { key: 'organicTraffic', label: 'Organic Traffic', category: 'traffic' },
+  { key: 'trend', label: 'Trend', category: 'traffic' },
+  { key: 'wordLimit', label: 'Word Limit', category: 'publishing' },
+  { key: 'tat', label: 'TAT Days', category: 'publishing' },
+  { key: 'backlinkNature', label: 'Backlink Type', category: 'publishing' },
+  { key: 'backlinksAllowed', label: 'Backlinks', category: 'publishing' },
+  { key: 'linkPlacement', label: 'Link Placement', category: 'publishing' },
+  { key: 'permanence', label: 'Permanence', category: 'publishing' },
+  { key: 'lastPublished', label: 'Last Published', category: 'quality' },
+  { key: 'outboundLinks', label: 'Outbound Limit', category: 'quality' },
+  { key: 'remark', label: 'Remark', category: 'quality' },
+  { key: 'availability', label: 'Available', category: 'status' }
+]
 
 const defaultFilters: Filters = {
   websiteUrl: "",
@@ -94,12 +134,14 @@ const defaultFilters: Filters = {
   country: "",
 }
 
+const defaultVisibleColumns: ColumnKey[] = ['name', 'niche', 'countryLang', 'authority', 'spam', 'price', 'trend']
+
 const styles = {
-  surface: "bg-neutral-950 text-white",
-  panel: "bg-neutral-900 text-white border border-neutral-800",
-  field: "bg-neutral-800 text-white placeholder:text-neutral-400 border border-neutral-700 focus-visible:ring-2 focus-visible:ring-yellow-500",
-  select: "bg-neutral-800 text-white border border-neutral-700",
-  menu: "bg-neutral-900 text-white border border-neutral-700",
+  surface: "bg-white dark:bg-neutral-950 text-slate-900 dark:text-white",
+  panel: "bg-slate-50 dark:bg-neutral-900 text-slate-900 dark:text-white border border-slate-200 dark:border-neutral-800",
+  field: "bg-white dark:bg-neutral-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-neutral-400 border border-slate-300 dark:border-neutral-700 focus-visible:ring-2 focus-visible:ring-yellow-500",
+  select: "bg-white dark:bg-neutral-800 text-slate-900 dark:text-white border border-slate-300 dark:border-neutral-700",
+  menu: "bg-white dark:bg-neutral-900 text-slate-900 dark:text-white border border-slate-300 dark:border-neutral-700",
   chip: "bg-yellow-500 text-black",
 }
 
@@ -161,22 +203,179 @@ export default function CompactFilterPage() {
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [activeFilterKey, setActiveFilterKey] = useState<keyof Filters | null>(null)
-  const [focusedCategory, setFocusedCategory] = useState<string>("basic")
-
-  const results = useMemo(() => applyFilters(sites, filters), [filters])
+  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(defaultVisibleColumns)
+  const [sites, setSites] = useState<Site[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [lastFetched, setLastFetched] = useState<Date | null>(null)
+  type RowLevel = 1 | 2 | 3 | 4 | 'custom'
+  const [rowLevel, setRowLevel] = useState<RowLevel>(2)
   
-  const setNum = (k: keyof Filters, v: string) => setFilters((f) => ({ ...f, [k]: v === "" ? undefined : Number(v) }))
-  const setStr = (k: keyof Filters, v: string) => setFilters((f) => ({ ...f, [k]: v }))
+
+  // Row presets: progressively reveal more data
+  const rowLevelPresets: Record<Exclude<RowLevel, 'custom'>, ColumnKey[]> = {
+    1: ['name', 'niche', 'price'],
+    2: defaultVisibleColumns,
+    3: ['name', 'niche', 'countryLang', 'authority', 'spam', 'price', 'priceWithContent', 'trend', 'wordLimit', 'tat', 'backlinksAllowed', 'linkPlacement'],
+    4: allColumns.map((c) => c.key),
+  }
+
+  const rowPaddingByLevel: Record<Exclude<RowLevel, 'custom'>, string> = {
+    1: 'py-1',
+    2: 'py-2',
+    3: 'py-3',
+    4: 'py-4',
+  }
+
+  const applyRowLevel = (lvl: Exclude<RowLevel, 'custom'>) => {
+    if (!loading) {
+      setRowLevel(lvl)
+      setVisibleColumns(rowLevelPresets[lvl])
+    }
+  }
+
+  // Convert filters to API format
+  const convertFiltersToAPI = (f: Filters): APIFilters => {
+    const apiFilters: APIFilters = {}
+    
+    if (f.daMin !== undefined) apiFilters.domainAuthority = { ...apiFilters.domainAuthority, min: f.daMin }
+    if (f.daMax !== undefined) apiFilters.domainAuthority = { ...apiFilters.domainAuthority, max: f.daMax }
+    if (f.paMin !== undefined) apiFilters.pageAuthority = { ...apiFilters.pageAuthority, min: f.paMin }
+    if (f.paMax !== undefined) apiFilters.pageAuthority = { ...apiFilters.pageAuthority, max: f.paMax }
+    if (f.drMin !== undefined) apiFilters.domainRating = { ...apiFilters.domainRating, min: f.drMin }
+    if (f.drMax !== undefined) apiFilters.domainRating = { ...apiFilters.domainRating, max: f.drMax }
+    if (f.spamMin !== undefined) apiFilters.spamScore = { ...apiFilters.spamScore, min: f.spamMin }
+    if (f.spamMax !== undefined) apiFilters.spamScore = { ...apiFilters.spamScore, max: f.spamMax }
+    if (f.priceMin !== undefined) apiFilters.costPrice = { ...apiFilters.costPrice, min: f.priceMin }
+    if (f.priceMax !== undefined) apiFilters.costPrice = { ...apiFilters.costPrice, max: f.priceMax }
+    if (f.priceWithContentMin !== undefined) apiFilters.sellingPrice = { ...apiFilters.sellingPrice, min: f.priceWithContentMin }
+    if (f.priceWithContentMax !== undefined) apiFilters.sellingPrice = { ...apiFilters.sellingPrice, max: f.priceWithContentMax }
+    if (f.semrushOverallTrafficMin !== undefined) apiFilters.semrushTraffic = { ...apiFilters.semrushTraffic, min: f.semrushOverallTrafficMin }
+    if (f.semrushOrganicTrafficMin !== undefined) apiFilters.semrushOrganicTraffic = { ...apiFilters.semrushOrganicTraffic, min: f.semrushOrganicTrafficMin }
+    if (f.niche) apiFilters.niche = f.niche
+    if (f.category) apiFilters.priceCategory = f.category
+    if (f.language) apiFilters.language = f.language
+    if (f.country) apiFilters.webCountry = f.country
+    if (f.backlinkNature) apiFilters.linkAttribute = f.backlinkNature
+    if (f.availability !== undefined) apiFilters.availability = f.availability
+    if (f.remarkIncludes) apiFilters.websiteRemark = f.remarkIncludes
+    
+    return apiFilters
+  }
+
+  
+
+  // Fetch data from API
+  const fetchData = async (apiFilters: APIFilters = {}) => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const apiSites = await fetchSitesWithFilters(apiFilters)
+      const transformedSites = apiSites.map(transformAPISiteToSite)
+      setSites(transformedSites)
+      setLastFetched(new Date())
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      
+      // Provide a more helpful error message
+      let errorMessage = 'Failed to fetch data. Please try again.'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('API endpoint not found')) {
+          errorMessage = 'API endpoint not available. Please check the configuration.'
+        } else if (error.message.includes('Network error')) {
+          errorMessage = 'Network error: Unable to connect to the API. Please check your internet connection.'
+        } else if (error.message.includes('404')) {
+          errorMessage = 'API endpoint not found. The service may be temporarily unavailable.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      setError(errorMessage)
+      setSites([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  
+
+  // Load initial data
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // Debounced filter update to avoid too many API calls
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const apiFilters = convertFiltersToAPI(filters)
+      fetchData(apiFilters)
+    }, 500) // 500ms delay
+
+    return () => clearTimeout(timeoutId)
+  }, [filters])
+
+  const results = useMemo(() => applyFilters(sites, filters), [sites, filters])
+  
+  const setNum = (k: keyof Filters, v: string) => {
+    if (!loading) {
+      setFilters((f) => ({ ...f, [k]: v === "" ? undefined : Number(v) }))
+    }
+  }
+  const setStr = (k: keyof Filters, v: string) => {
+    if (!loading) {
+      setFilters((f) => ({ ...f, [k]: v }))
+    }
+  }
 
   const reset = () => {
-    setFilters(defaultFilters)
-    setFocusedCategory("basic")
+    if (!loading) {
+      setFilters(defaultFilters)
+    }
+  }
+
+  const toggleColumn = (columnKey: ColumnKey) => {
+    if (!loading) {
+      setVisibleColumns(prev => 
+        prev.includes(columnKey)
+          ? prev.filter(key => key !== columnKey)
+          : [...prev, columnKey]
+      )
+      setRowLevel('custom')
+    }
+  }
+
+  const resetColumns = () => {
+    if (!loading) {
+      setVisibleColumns(defaultVisibleColumns)
+      setRowLevel(2)
+    }
+  }
+
+  const showAllColumns = () => {
+    if (!loading) {
+      setVisibleColumns(allColumns.map(col => col.key))
+      setRowLevel(4)
+    }
+  }
+
+  const getColumnsByCategory = () => {
+    const categories: Record<string, ColumnConfig[]> = {}
+    allColumns.forEach(col => {
+      if (!categories[col.category]) categories[col.category] = []
+      categories[col.category].push(col)
+    })
+    return categories
   }
 
   const activeChips = useMemo(() => {
-    const chips: { key: keyof Filters; label: string }[] = []
+    const chips: { key: keyof Filters; label: string; value: string }[] = []
     const add = (key: keyof Filters, label: string, value?: unknown) => {
-      if (value !== undefined && value !== "" && value !== null) chips.push({ key, label })
+      if (value !== undefined && value !== "" && value !== null) {
+        chips.push({ key, label, value: String(value) })
+      }
     }
     add("websiteUrl", `URL: ${filters.websiteUrl}`, filters.websiteUrl)
     add("websiteName", `Name: ${filters.websiteName}`, filters.websiteName)
@@ -193,17 +392,306 @@ export default function CompactFilterPage() {
     add("spamMax", `Spam ≤ ${filters.spamMax}%`, filters.spamMax)
     add("spamMin", `Spam ≥ ${filters.spamMin}%`, filters.spamMin)
     add("tool", `Tool: ${filters.tool}`, filters.tool)
+    add("semrushAuthorityMin", `Semrush Auth ≥ ${filters.semrushAuthorityMin}`, filters.semrushAuthorityMin)
+    add("semrushOverallTrafficMin", `Traffic ≥ ${filters.semrushOverallTrafficMin?.toLocaleString()}`, filters.semrushOverallTrafficMin)
+    add("semrushOrganicTrafficMin", `Organic ≥ ${filters.semrushOrganicTrafficMin?.toLocaleString()}`, filters.semrushOrganicTrafficMin)
+    add("targetCountry", `Target: ${filters.targetCountry}`, filters.targetCountry)
+    add("targetCountryPctMin", `Target % ≥ ${filters.targetCountryPctMin}`, filters.targetCountryPctMin)
+    add("trend", `Trend: ${filters.trend}`, filters.trend)
     add("priceMin", `$ ≥ ${filters.priceMin}`, filters.priceMin)
     add("priceMax", `$ ≤ ${filters.priceMax}`, filters.priceMax)
-    add("trend", `Trend: ${filters.trend}`, filters.trend)
+    add("priceWithContentMin", `Content $ ≥ ${filters.priceWithContentMin}`, filters.priceWithContentMin)
+    add("priceWithContentMax", `Content $ ≤ ${filters.priceWithContentMax}`, filters.priceWithContentMax)
+    add("wordLimitMin", `Words ≥ ${filters.wordLimitMin}`, filters.wordLimitMin)
+    add("wordLimitMax", `Words ≤ ${filters.wordLimitMax}`, filters.wordLimitMax)
+    add("tatDaysMin", `TAT ≥ ${filters.tatDaysMin}`, filters.tatDaysMin)
+    add("tatDaysMax", `TAT ≤ ${filters.tatDaysMax}`, filters.tatDaysMax)
+    add("permanenceMinMonths", `Permanence ≥ ${filters.permanenceMinMonths}`, filters.permanenceMinMonths)
+    add("permanenceMaxMonths", `Permanence ≤ ${filters.permanenceMaxMonths}`, filters.permanenceMaxMonths)
+    add("backlinkNature", `Backlink: ${filters.backlinkNature}`, filters.backlinkNature)
+    add("backlinksAllowedMin", `Backlinks ≥ ${filters.backlinksAllowedMin}`, filters.backlinksAllowedMin)
+    add("linkPlacement", `Placement: ${filters.linkPlacement}`, filters.linkPlacement)
+    add("permanence", `Permanence: ${filters.permanence}`, filters.permanence)
+    add("sampleUrl", `Sample: ${filters.sampleUrl}`, filters.sampleUrl)
+    add("remarkIncludes", `Remark: ${filters.remarkIncludes}`, filters.remarkIncludes)
+    add("lastPublishedAfter", `Published after ${filters.lastPublishedAfter}`, filters.lastPublishedAfter)
+    add("outboundLinkLimitMax", `Outbound ≤ ${filters.outboundLinkLimitMax}`, filters.outboundLinkLimitMax)
+    add("guidelinesUrlIncludes", `Guidelines: ${filters.guidelinesUrlIncludes}`, filters.guidelinesUrlIncludes)
+    add("disclaimerIncludes", `Disclaimer: ${filters.disclaimerIncludes}`, filters.disclaimerIncludes)
     add("availability", `Available only`, filters.availability)
-    // Add more as needed...
     return chips
   }, [filters])
 
   const openFilterModal = (filterKey: keyof Filters) => {
-    setActiveFilterKey(filterKey)
-    setFilterModalOpen(true)
+    if (!loading) {
+      setActiveFilterKey(filterKey)
+      setFilterModalOpen(true)
+    }
+  }
+
+  const renderColumnCell = (site: Site, columnKey: ColumnKey) => {
+    switch (columnKey) {
+      case 'name':
+        return (
+          <div className="font-medium">
+            <a
+              href={site.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-yellow-400 hover:text-yellow-300 underline underline-offset-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {site.name}
+            </a>
+            {rowLevel !== 'custom' && rowLevel >= 2 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400">
+                {site.url.replace(/^https?:\/\//, "")}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Category:</span> {site.category}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Language:</span> {site.language}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'niche':
+        return (
+          <div>
+            <span className="text-slate-700 dark:text-neutral-300">{site.niche}</span>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Type:</span> {site.category}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Country:</span> {site.country}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'countryLang':
+        return (
+          <div>
+            <span className="text-slate-700 dark:text-neutral-300">
+              <span>{site.country}</span>
+              <span className="text-slate-400 dark:text-neutral-500 mx-1">•</span>
+              <span className="text-xs">{site.language}</span>
+            </span>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Region:</span> {site.country}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Locale:</span> {site.language}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'authority':
+        return (
+          <div>
+            <span className="text-slate-700 dark:text-neutral-300">{`${site.da}/${site.pa}/${site.dr}`}</span>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">DA:</span> {site.da}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">PA:</span> {site.pa} | <span className="text-slate-400 dark:text-neutral-500">DR:</span> {site.dr}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'spam':
+        return (
+          <div>
+            <Badge variant="secondary" className={styles.chip}>
+              {site.spamScore}%
+            </Badge>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Score:</span> {site.spamScore}/10
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Risk:</span> {site.spamScore <= 3 ? 'Low' : site.spamScore <= 6 ? 'Medium' : 'High'}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'price':
+        return (
+          <div>
+            <span className="text-slate-700 dark:text-neutral-300">${site.publishing.price.toLocaleString()}</span>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Base:</span> ${site.publishing.price}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">With Content:</span> ${site.publishing.priceWithContent}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'priceWithContent':
+        return (
+          <div>
+            <span className="text-slate-700 dark:text-neutral-300">${site.publishing.priceWithContent.toLocaleString()}</span>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Base:</span> ${site.publishing.price}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Difference:</span> +${site.publishing.priceWithContent - site.publishing.price}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'traffic':
+        return (
+          <div className="text-slate-700 dark:text-neutral-300 text-sm">
+            <div>{(site.toolScores.semrushOverallTraffic / 1000000).toFixed(1)}M</div>
+            {rowLevel !== 'custom' && rowLevel >= 2 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400">overall</div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Organic:</span> {(site.toolScores.semrushOrganicTraffic / 1000000).toFixed(1)}M
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Authority:</span> {site.toolScores.semrushAuthority}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'trend':
+        return (
+          <div>
+            <Badge variant="outline" className="capitalize text-xs">
+              {site.toolScores.trafficTrend}
+            </Badge>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Status:</span> {site.toolScores.trafficTrend}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Change:</span> {site.toolScores.trafficTrend === 'increasing' ? '↗' : site.toolScores.trafficTrend === 'decreasing' ? '↘' : '→'}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'wordLimit':
+        return (
+          <div>
+            <span className="text-slate-700 dark:text-neutral-300">{site.publishing.wordLimit}</span>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Min:</span> {site.publishing.wordLimit}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">TAT:</span> {site.publishing.tatDays}d
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'tat':
+        return (
+          <div>
+            <span className="text-slate-700 dark:text-neutral-300">{site.publishing.tatDays}d</span>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Days:</span> {site.publishing.tatDays}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Word Limit:</span> {site.publishing.wordLimit}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'linkPlacement':
+        return (
+          <div>
+            <Badge variant="outline" className="text-xs capitalize">
+              {site.publishing.linkPlacement.replace('-', ' ')}
+            </Badge>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Type:</span> {site.publishing.linkPlacement.replace('-', ' ')}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Nature:</span> {site.publishing.backlinkNature}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'permanence':
+        return (
+          <div>
+            <Badge variant="outline" className="text-xs">
+              {site.publishing.permanence === 'lifetime' ? 'Lifetime' : '12m'}
+            </Badge>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Duration:</span> {site.publishing.permanence === 'lifetime' ? 'Lifetime' : '12 months'}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Backlinks:</span> {site.publishing.backlinksAllowed}
+              </div>
+            ) : null}
+          </div>
+        )
+      case 'availability':
+        return (
+          <div>
+            <div className="flex items-center justify-center">
+              {site.additional.availability ? (
+                <div className="w-2 h-2 bg-green-500 rounded-full" title="Available" />
+              ) : (
+                <div className="text-xs text-red-400">Unavailable</div>
+              )}
+            </div>
+            {rowLevel !== 'custom' && rowLevel >= 3 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Status:</span> {site.additional.availability ? 'Available' : 'Unavailable'}
+              </div>
+            ) : null}
+            {rowLevel !== 'custom' && rowLevel >= 4 ? (
+              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
+                <span className="text-slate-400 dark:text-neutral-500">Last Published:</span> {site.quality.lastPublished}
+              </div>
+            ) : null}
+          </div>
+        )
+      default:
+        return null
+    }
   }
 
   const renderFilterModal = () => {
@@ -212,16 +700,22 @@ export default function CompactFilterPage() {
     const pebble = filterPebbles.find(p => p.key === activeFilterKey)
     if (!pebble) return null
 
+    const currentValue = filters[activeFilterKey]
+    const hasValue = currentValue !== undefined && currentValue !== "" && currentValue !== null
+
     return (
-      <Dialog open={filterModalOpen} onOpenChange={setFilterModalOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-neutral-900 text-white border-neutral-700">
+      <Dialog open={filterModalOpen} onOpenChange={(open) => !loading && setFilterModalOpen(open)}>
+        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-neutral-900 text-slate-900 dark:text-white border-slate-200 dark:border-neutral-700">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {pebble.icon}
               {pebble.label}
             </DialogTitle>
-            <DialogDescription className="text-neutral-400">
-              Configure your {pebble.label.toLowerCase()} filter
+            <DialogDescription className="text-slate-600 dark:text-neutral-400">
+              {hasValue 
+                ? `Edit your ${pebble.label.toLowerCase()} filter` 
+                : `Configure your ${pebble.label.toLowerCase()} filter`
+              }
             </DialogDescription>
           </DialogHeader>
           
@@ -230,14 +724,22 @@ export default function CompactFilterPage() {
           </div>
           
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setFilterModalOpen(false)}>
+            <Button variant="secondary" onClick={() => setFilterModalOpen(false)} disabled={loading}>
               Cancel
             </Button>
             <Button 
               className={styles.chip}
               onClick={() => setFilterModalOpen(false)}
+              disabled={loading}
             >
-              Apply Filter
+              {loading ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                  Loading...
+                </>
+              ) : (
+                hasValue ? "Update Filter" : "Apply Filter"
+              )}
             </Button>
           </div>
         </DialogContent>
@@ -246,6 +748,12 @@ export default function CompactFilterPage() {
   }
 
   const renderFilterContent = (filterKey: keyof Filters) => {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !loading) {
+        setFilterModalOpen(false)
+      }
+    }
+
     switch (filterKey) {
       case "websiteUrl":
       case "websiteName":
@@ -264,6 +772,8 @@ export default function CompactFilterPage() {
             placeholder={`Enter ${filterKey.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
             value={filters[filterKey] as string || ""}
             onChange={(e) => setStr(filterKey, e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={loading}
           />
         )
       
@@ -298,88 +808,108 @@ export default function CompactFilterPage() {
             placeholder={`Enter ${filterKey.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
             value={filters[filterKey] as number || ""}
             onChange={(e) => setNum(filterKey, e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={loading}
           />
         )
       
       case "tool":
         return (
-          <Select
-            value={filters.tool || ""}
-            onValueChange={(val) => setFilters((f) => ({ ...f, tool: val as Filters["tool"] }))}
-          >
-            <SelectTrigger className={styles.select}>
-              <SelectValue placeholder="Select SEO tool" />
-            </SelectTrigger>
-            <SelectContent className={styles.menu}>
-              <SelectItem value="Semrush">Semrush</SelectItem>
-              <SelectItem value="Ahrefs">Ahrefs</SelectItem>
-              <SelectItem value="SimilarWeb">SimilarWeb</SelectItem>
-            </SelectContent>
-          </Select>
+          <div onKeyDown={handleKeyDown}>
+            <Select
+              value={filters.tool || ""}
+              onValueChange={(val) => !loading && setFilters((f) => ({ ...f, tool: val as Filters["tool"] }))}
+              disabled={loading}
+            >
+              <SelectTrigger className={styles.select}>
+                <SelectValue placeholder="Select SEO tool" />
+              </SelectTrigger>
+              <SelectContent className={styles.menu}>
+                <SelectItem value="Semrush">Semrush</SelectItem>
+                <SelectItem value="Ahrefs">Ahrefs</SelectItem>
+                <SelectItem value="SimilarWeb">SimilarWeb</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )
       
       case "trend":
         return (
-          <Select value={filters.trend || ""} onValueChange={(val) => setFilters((f) => ({ ...f, trend: val as Trend }))}>
-            <SelectTrigger className={styles.select}>
-              <SelectValue placeholder="Select traffic trend" />
-            </SelectTrigger>
-            <SelectContent className={styles.menu}>
-              <SelectItem value="increasing">Increasing</SelectItem>
-              <SelectItem value="stable">Stable</SelectItem>
-              <SelectItem value="decreasing">Decreasing</SelectItem>
-            </SelectContent>
-          </Select>
+          <div onKeyDown={handleKeyDown}>
+            <Select 
+              value={filters.trend || ""} 
+              onValueChange={(val) => !loading && setFilters((f) => ({ ...f, trend: val as Trend }))}
+              disabled={loading}
+            >
+              <SelectTrigger className={styles.select}>
+                <SelectValue placeholder="Select traffic trend" />
+              </SelectTrigger>
+              <SelectContent className={styles.menu}>
+                <SelectItem value="increasing">Increasing</SelectItem>
+                <SelectItem value="stable">Stable</SelectItem>
+                <SelectItem value="decreasing">Decreasing</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )
       
       case "backlinkNature":
         return (
-          <Select
-            value={filters.backlinkNature || ""}
-            onValueChange={(val) => setFilters((f) => ({ ...f, backlinkNature: val as BacklinkNature }))}
-          >
-            <SelectTrigger className={styles.select}>
-              <SelectValue placeholder="Select backlink nature" />
-            </SelectTrigger>
-            <SelectContent className={styles.menu}>
-              <SelectItem value="do-follow">Do-Follow</SelectItem>
-              <SelectItem value="no-follow">No-Follow</SelectItem>
-              <SelectItem value="sponsored">Sponsored</SelectItem>
-            </SelectContent>
-          </Select>
+          <div onKeyDown={handleKeyDown}>
+            <Select
+              value={filters.backlinkNature || ""}
+              onValueChange={(val) => !loading && setFilters((f) => ({ ...f, backlinkNature: val as BacklinkNature }))}
+              disabled={loading}
+            >
+              <SelectTrigger className={styles.select}>
+                <SelectValue placeholder="Select backlink nature" />
+              </SelectTrigger>
+              <SelectContent className={styles.menu}>
+                <SelectItem value="do-follow">Do-Follow</SelectItem>
+                <SelectItem value="no-follow">No-Follow</SelectItem>
+                <SelectItem value="sponsored">Sponsored</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )
       
       case "linkPlacement":
         return (
-          <Select
-            value={filters.linkPlacement || ""}
-            onValueChange={(val) => setFilters((f) => ({ ...f, linkPlacement: val as LinkPlacement }))}
-          >
-            <SelectTrigger className={styles.select}>
-              <SelectValue placeholder="Select link placement" />
-            </SelectTrigger>
-            <SelectContent className={styles.menu}>
-              <SelectItem value="in-content">In-content</SelectItem>
-              <SelectItem value="author-bio">Author Bio</SelectItem>
-              <SelectItem value="footer">Footer</SelectItem>
-            </SelectContent>
-          </Select>
+          <div onKeyDown={handleKeyDown}>
+            <Select
+              value={filters.linkPlacement || ""}
+              onValueChange={(val) => !loading && setFilters((f) => ({ ...f, linkPlacement: val as LinkPlacement }))}
+              disabled={loading}
+            >
+              <SelectTrigger className={styles.select}>
+                <SelectValue placeholder="Select link placement" />
+              </SelectTrigger>
+              <SelectContent className={styles.menu}>
+                <SelectItem value="in-content">In-content</SelectItem>
+                <SelectItem value="author-bio">Author Bio</SelectItem>
+                <SelectItem value="footer">Footer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )
       
       case "permanence":
         return (
-          <Select
-            value={filters.permanence || ""}
-            onValueChange={(val) => setFilters((f) => ({ ...f, permanence: val as "lifetime" | "12-months" }))}
-          >
-            <SelectTrigger className={styles.select}>
-              <SelectValue placeholder="Select permanence" />
-            </SelectTrigger>
-            <SelectContent className={styles.menu}>
-              <SelectItem value="lifetime">Lifetime</SelectItem>
-              <SelectItem value="12-months">12 months</SelectItem>
-            </SelectContent>
-          </Select>
+          <div onKeyDown={handleKeyDown}>
+            <Select
+              value={filters.permanence || ""}
+              onValueChange={(val) => !loading && setFilters((f) => ({ ...f, permanence: val as "lifetime" | "12-months" }))}
+              disabled={loading}
+            >
+              <SelectTrigger className={styles.select}>
+                <SelectValue placeholder="Select permanence" />
+              </SelectTrigger>
+              <SelectContent className={styles.menu}>
+                <SelectItem value="lifetime">Lifetime</SelectItem>
+                <SelectItem value="12-months">12 months</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )
       
       case "lastPublishedAfter":
@@ -389,25 +919,28 @@ export default function CompactFilterPage() {
             type="date"
             value={filters.lastPublishedAfter || ""}
             onChange={(e) => setStr("lastPublishedAfter", e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={loading}
           />
         )
       
       case "availability":
         return (
-          <div className="flex items-center justify-between rounded-md p-3 border border-neutral-800 bg-neutral-900/40">
+          <div className="flex items-center justify-between rounded-md p-3 border border-slate-200 dark:border-neutral-800 bg-slate-50 dark:bg-neutral-900/40" onKeyDown={handleKeyDown}>
             <div>
-              <Label className="text-sm">Show only available publishers</Label>
+              <Label className="text-sm text-slate-900 dark:text-white">Show only available publishers</Label>
             </div>
             <Switch
               checked={filters.availability ?? false}
-              onCheckedChange={(v) => setFilters((f) => ({ ...f, availability: v }))}
+              onCheckedChange={(v) => !loading && setFilters((f) => ({ ...f, availability: v }))}
+              disabled={loading}
               className="data-[state=checked]:bg-yellow-500"
             />
           </div>
         )
       
       default:
-        return <div className="text-neutral-400">Filter configuration not available</div>
+        return <div className="text-slate-600 dark:text-neutral-400">Filter configuration not available</div>
     }
   }
 
@@ -437,299 +970,411 @@ export default function CompactFilterPage() {
     quality: "Quality & History",
     additional: "Additional Info"
   }
-
-  const categoryKeys = Object.keys(groupedPebbles)
-
-  const nextCategory = () => {
-    const currentIndex = categoryKeys.indexOf(focusedCategory)
-    const nextIndex = (currentIndex + 1) % categoryKeys.length
-    setFocusedCategory(categoryKeys[nextIndex])
-  }
-
-  const prevCategory = () => {
-    const currentIndex = categoryKeys.indexOf(focusedCategory)
-    const prevIndex = currentIndex === 0 ? categoryKeys.length - 1 : currentIndex - 1
-    setFocusedCategory(categoryKeys[prevIndex])
-  }
+  const levelLabels: Record<Exclude<RowLevel, 'custom'>, string> = { 1: 'Short', 2: 'Medium', 3: 'Tall', 4: 'Extra Tall' }
 
   return (
     <div className={cn(styles.surface, "min-h-[100dvh]")}>
-      <div className="mx-auto max-w-7xl px-4 py-6 space-y-8">
-        
-        {/* Header Section */}
-        <div className="text-center space-y-4">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold text-white">
-              Publisher Directory
-            </h1>
-            <p className="text-xl text-neutral-400 max-w-2xl mx-auto">
-              Discover high-quality publishers for your guest posting and link building campaigns
-            </p>
-          </div>
-          <div className="flex items-center justify-center gap-4 text-sm text-neutral-500">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Available</span>
+      {/* Subtle Header */}
+      <div className="border-b border-slate-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-950/50 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Publisher Directory</h1>
+              <p className="text-sm text-slate-600 dark:text-neutral-400">Find and filter high-quality publishers for your campaigns</p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span>Premium</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span>Verified</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-500">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Available</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span>Premium</span>
+                </div>
+              </div>
+
+              <ThemeToggle />
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Filters Section - Side by Side Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Category Carousel - Takes 2 columns */}
-          <div className="lg:col-span-2">
-            <Card className={cn(styles.panel, "p-6 h-full")}>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-500/10 rounded-lg">
-                    <Filter className="w-6 h-6 text-yellow-500" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">Filter Categories</h2>
-                    <p className="text-sm text-neutral-400">Select a category to view available filters</p>
-                  </div>
-                </div>
-                <Button variant="secondary" onClick={reset} className="h-10 px-6">
-                  Reset All
-                </Button>
+      <div className="mx-auto max-w-7xl px-4 py-6 space-y-6">
+        
+        {/* Compact Filter Pebbles Section */}
+        <Card className={cn(styles.panel, "p-6")}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-yellow-500" />
+              <h2 className="text-lg font-semibold">Filters</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => fetchData(convertFiltersToAPI(filters))} 
+                disabled={loading}
+                className="h-8 text-xs"
+              >
+                {loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                Refresh
+              </Button>
+              <Button variant="secondary" onClick={reset} className="h-8 text-xs">
+                Reset All
+              </Button>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            {Object.entries(groupedPebbles).map(([category, pebbles]) => (
+              <div key={category} className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-neutral-400">
+                {categoryIcons[category as keyof typeof categoryIcons]}
+                <span className="font-medium">
+                  {categoryLabels[category as keyof typeof categoryLabels]}
+                </span>
               </div>
-              
-              {/* Category Navigation */}
-              <div className="flex items-center justify-between mb-8">
-                <button
-                  onClick={prevCategory}
-                  className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors disabled:opacity-50"
-                  disabled={categoryKeys.length <= 1}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                
-                <div className="flex-1 mx-4">
-                  <div className="text-center">
-                    <div className="mb-4">
-                      <h3 className="text-3xl font-black bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-200 bg-clip-text text-transparent">
-                        {categoryLabels[focusedCategory as keyof typeof categoryLabels]}
-                      </h3>
-                    </div>
-                    
-                    {/* Enhanced dot indicators */}
-                    <div className="flex items-center justify-center gap-3">
-                      {categoryKeys.map((key, index) => (
-                        <button
-                          key={key}
-                          onClick={() => setFocusedCategory(key)}
-                          className={cn(
-                            "transition-all duration-300 ease-out",
-                            key === focusedCategory 
-                              ? "scale-125" 
-                              : "scale-100 hover:scale-110"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-3 h-3 rounded-full transition-all duration-300",
-                            key === focusedCategory 
-                              ? "bg-gradient-to-r from-yellow-400 to-yellow-300 w-6 shadow-lg shadow-yellow-500/50" 
-                              : "bg-neutral-600 hover:bg-neutral-500 hover:shadow-md"
-                          )} />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={nextCategory}
-                  className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors disabled:opacity-50"
-                  disabled={categoryKeys.length <= 1}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Focused Category Filters */}
-              <div className="space-y-6">
-                <div className="flex flex-wrap gap-3">
-                  {groupedPebbles[focusedCategory]?.map((pebble) => {
+                <div className="flex flex-wrap gap-2">
+                  {pebbles.map((pebble) => {
                     const hasValue = filters[pebble.key] !== undefined && 
                                    filters[pebble.key] !== "" && 
                                    filters[pebble.key] !== null
                     
                     return (
-                      <button
-                        key={pebble.key}
-                        onClick={() => openFilterModal(pebble.key)}
-                        className={cn(
-                          "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium border transition-all duration-200 hover:scale-105",
-                          hasValue 
-                            ? "bg-yellow-500 text-black border-yellow-500 shadow-lg shadow-yellow-500/25" 
-                            : "bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-700 hover:border-neutral-600 hover:shadow-md"
-                        )}
-                      >
-                        {pebble.icon}
-                        <span>{pebble.label}</span>
-                        {hasValue && <Plus className="w-4 h-4 rotate-45" />}
-                      </button>
+                                              <button
+                          key={pebble.key}
+                          onClick={() => openFilterModal(pebble.key)}
+                          disabled={loading}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-all duration-200 hover:scale-105",
+                            hasValue 
+                              ? "bg-yellow-500 text-black border-yellow-500 shadow-md" 
+                              : "bg-slate-200 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 border-slate-300 dark:border-neutral-700 hover:bg-slate-300 dark:hover:bg-neutral-700 hover:border-slate-400 dark:hover:border-neutral-600",
+                            loading && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          {pebble.icon}
+                          <span>{pebble.label}</span>
+                          {hasValue && <Plus className="w-3 h-3 rotate-45" />}
+                          {loading && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+                        </button>
                     )
                   })}
                 </div>
               </div>
-            </Card>
+            ))}
           </div>
+        </Card>
 
-          {/* Active Filters - Takes 1 column */}
-          <div className="lg:col-span-1">
-            <Card className={cn(styles.panel, "p-6 h-full")}>
-              <div className="flex items-center gap-2 mb-4">
-                <Filter className="w-4 h-4 text-yellow-500" />
-                <h3 className="text-lg font-semibold">Active Filters</h3>
+        {/* Active Filters Chips */}
+        {activeChips.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-neutral-400">
+                <Filter className="w-4 h-4" />
+                <span className="font-medium">Active Filters ({activeChips.length})</span>
               </div>
-              
-                             {activeChips.length > 0 ? (
-                 <div className="space-y-3">
-                   {activeChips.map((chip) => (
-                     <div
-                       key={chip.label}
-                       className="flex items-center justify-between p-3 bg-neutral-800 rounded-lg border border-neutral-700 hover:bg-neutral-700 transition-colors cursor-pointer group"
-                       onClick={() => openFilterModal(chip.key)}
-                     >
-                       <span className="text-sm text-neutral-300 group-hover:text-white transition-colors">{chip.label}</span>
-                       <button
-                         onClick={(e) => {
-                           e.stopPropagation() // Prevent modal from opening when clicking remove
-                           setFilters((f) => {
-                             const val = f[chip.key]
-                             let reset: any = ""
-                             if (typeof val === "boolean") reset = undefined
-                             else if (typeof val === "number") reset = undefined
-                             else reset = ""
-                             return { ...f, [chip.key]: reset }
-                           })
-                         }}
-                         className="rounded-full p-1 hover:bg-red-500 hover:text-white transition-colors"
-                       >
-                         <X className="w-3 h-3" />
-                       </button>
-                     </div>
-                   ))}
-                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-neutral-500 mb-2">
-                    <Filter className="w-8 h-8 mx-auto" />
-                  </div>
-                  <p className="text-sm text-neutral-400">No active filters</p>
-                  <p className="text-xs text-neutral-500">Select filters from the categories above</p>
-                </div>
-              )}
-            </Card>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={reset}
+                disabled={loading}
+                className="h-7 text-xs border-slate-300 dark:border-neutral-700 hover:bg-slate-100 dark:hover:bg-neutral-800"
+              >
+                {loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                Clear All
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeChips.map((chip) => (
+                <button
+                  key={chip.label}
+                  onClick={() => openFilterModal(chip.key)}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm bg-yellow-500 text-black border border-yellow-500 hover:bg-yellow-400 transition-all duration-200 hover:scale-105 cursor-pointer group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={`Click to edit ${chip.label}`}
+                >
+                  <span className="font-medium">{chip.label}</span>
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (loading) return
+                      setFilters((f) => {
+                        const val = f[chip.key]
+                        let reset: any = ""
+                        if (typeof val === "boolean") reset = undefined
+                        else if (typeof val === "number") reset = undefined
+                        else reset = ""
+                        return { ...f, [chip.key]: reset }
+                      })
+                    }}
+                    role="button"
+                    aria-label="Remove filter"
+                    className="rounded-full p-0.5 hover:bg-red-500 hover:text-white transition-colors opacity-70 group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Remove filter"
+                  >
+                    {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Results Section */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h2 className="text-2xl font-semibold text-white">
-                {results.length} {results.length === 1 ? "Publisher" : "Publishers"} Found
-              </h2>
-              <p className="text-sm text-neutral-400">
-                Showing results based on your current filters
-              </p>
+        <section className="space-y-4">
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs">!</span>
+                </div>
+                <span className="font-medium">Error</span>
+              </div>
+              <p className="text-red-700 dark:text-red-300 mt-1">{error}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => fetchData(convertFiltersToAPI(filters))}
+                className="mt-2 border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/20"
+              >
+                Try Again
+              </Button>
             </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-neutral-300">Sort by</Label>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className={cn(styles.select, "h-10 w-52")}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className={styles.menu}>
-                  <SelectItem value="relevance">Relevance</SelectItem>
-                  <SelectItem value="nameAsc">Name: A → Z</SelectItem>
-                  <SelectItem value="priceLow">Price: Low → High</SelectItem>
-                  <SelectItem value="authorityHigh">Authority: High</SelectItem>
-                </SelectContent>
-              </Select>
+          )}
+          
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold">
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Loading...
+                  </div>
+                ) : (
+                  `${results.length} ${results.length === 1 ? "Result" : "Results"}`
+                )}
+              </h2>
+              {lastFetched && !loading && (
+                <p className="text-xs text-slate-500 dark:text-neutral-400">
+                  Last updated: {lastFetched.toLocaleTimeString()}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              {/* Row height/detail control */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={loading}
+                    className="h-8 border-slate-300 dark:border-neutral-700 hover:bg-slate-100 dark:hover:bg-neutral-800 disabled:opacity-50"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    {rowLevel === 'custom' ? 'Rows: Custom' : `Rows: ${levelLabels[rowLevel]}`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-700" align="end">
+                  <div className="space-y-1">
+                    {([1,2,3,4] as const).map((lvl) => (
+                      <button
+                        key={lvl}
+                        className={cn(
+                          'w-full text-left px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-neutral-800 text-sm text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed',
+                          rowLevel === lvl && 'bg-slate-100 dark:bg-neutral-800'
+                        )}
+                        onClick={() => applyRowLevel(lvl)}
+                        disabled={loading}
+                      >
+                        {levelLabels[lvl]}
+                        <span className="ml-2 text-xs text-slate-500 dark:text-neutral-400">{rowLevelPresets[lvl].length} fields</span>
+                      </button>
+                    ))}
+                    {rowLevel === 'custom' ? (
+                      <div className="text-xs text-slate-500 dark:text-neutral-500 px-3 pt-2">Custom: adjusted via column toggles</div>
+                    ) : null}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {/* Column Visibility Control */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={loading}
+                    className="h-8 border-slate-300 dark:border-neutral-700 hover:bg-slate-100 dark:hover:bg-neutral-800 disabled:opacity-50"
+                  >
+                    <Columns3 className="w-4 h-4 mr-2" />
+                    Columns ({visibleColumns.length})
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-700" align="end">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-slate-900 dark:text-white">Manage Columns</h4>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={resetColumns}
+                          disabled={loading}
+                          className="h-6 text-xs text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
+                        >
+                          Reset
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={showAllColumns}
+                          disabled={loading}
+                          className="h-6 text-xs text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
+                        >
+                          Show All
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {Object.entries(getColumnsByCategory()).map(([category, columns]) => (
+                        <div key={category} className="space-y-2">
+                          <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 uppercase tracking-wide">
+                            {category.replace(/([A-Z])/g, ' $1').trim()}
+                          </div>
+                          <div className="space-y-1.5">
+                            {columns.map((column) => (
+                              <div 
+                                key={column.key} 
+                                className="flex items-center space-x-2 p-1 rounded hover:bg-slate-100 dark:hover:bg-neutral-800/50"
+                              >
+                                <Checkbox
+                                  id={column.key}
+                                  checked={visibleColumns.includes(column.key)}
+                                  onCheckedChange={() => toggleColumn(column.key)}
+                                  disabled={loading}
+                                  className="data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500 disabled:opacity-50"
+                                />
+                                <label 
+                                  htmlFor={column.key}
+                                  className="text-sm text-slate-700 dark:text-neutral-300 cursor-pointer flex-1"
+                                >
+                                  {column.label}
+                                </label>
+                                {visibleColumns.includes(column.key) ? (
+                                  <Eye className="w-3 h-3 text-green-500" />
+                                ) : (
+                                  <EyeOff className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Sort Control */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-slate-600 dark:text-neutral-300">Sort by</Label>
+                <Select 
+                value={sortBy} 
+                onValueChange={(value) => !loading && setSortBy(value)} 
+                disabled={loading}
+              >
+                  <SelectTrigger className={cn(styles.select, "h-8 w-48")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={styles.menu}>
+                    <SelectItem value="relevance">Relevance</SelectItem>
+                    <SelectItem value="nameAsc">Name: A → Z</SelectItem>
+                    <SelectItem value="priceLow">Price: Low → High</SelectItem>
+                    <SelectItem value="authorityHigh">Authority: High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
           {/* Results Table */}
-          <div className="rounded-xl border border-neutral-800 overflow-hidden bg-neutral-900/50">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-neutral-800 bg-neutral-800/50">
-                  <TableHead className="text-neutral-300 font-semibold">Name</TableHead>
-                  <TableHead className="text-neutral-300 font-semibold">Niche</TableHead>
-                  <TableHead className="text-neutral-300 font-semibold">Country/Lang</TableHead>
-                  <TableHead className="text-neutral-300 font-semibold">Authority</TableHead>
-                  <TableHead className="text-neutral-300 font-semibold">Spam</TableHead>
-                  <TableHead className="text-neutral-300 font-semibold">Price</TableHead>
-                  <TableHead className="text-neutral-300 font-semibold">Trend</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {results.map((site) => (
-                  <TableRow
-                    key={site.id}
-                    className="border-neutral-800 hover:bg-neutral-800/30 cursor-pointer transition-colors"
-                    onClick={() => {
-                      setSelectedSite(site)
-                      setDetailsOpen(true)
-                    }}
-                  >
-                    <TableCell>
-                      <div className="font-medium">
-                        <a
-                          href={site.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-yellow-400 hover:text-yellow-300 underline underline-offset-2"
+          <div className="rounded-lg border border-slate-200 dark:border-neutral-800 overflow-hidden">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center gap-3 text-slate-600 dark:text-neutral-400">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <span>Loading data...</span>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-slate-200 dark:border-neutral-800">
+                      {visibleColumns.map(columnKey => {
+                        const column = allColumns.find(col => col.key === columnKey)
+                        return (
+                          <TableHead key={columnKey} className="text-slate-600 dark:text-neutral-300 whitespace-nowrap">
+                            {column?.label}
+                          </TableHead>
+                        )
+                      })}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-slate-500 dark:text-neutral-400">
+                          No results found. Try adjusting your filters.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      results.map((site) => (
+                        <TableRow
+                          key={site.id}
+                          className={cn(
+                            "border-slate-200 dark:border-neutral-800 hover:bg-slate-50 dark:hover:bg-neutral-900/50 cursor-pointer",
+                            rowLevel !== 'custom' ? rowPaddingByLevel[rowLevel] : '',
+                            loading && "opacity-50 cursor-not-allowed"
+                          )}
+                          onClick={() => {
+                            if (!loading) {
+                              setSelectedSite(site)
+                              setDetailsOpen(true)
+                            }
+                          }}
                         >
-                          {site.name}
-                        </a>
-                      </div>
-                      <div className="text-xs text-neutral-400">
-                        {site.url.replace(/^https?:\/\//, "")}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-neutral-300">{site.niche}</TableCell>
-                    <TableCell className="text-neutral-300">
-                      <span>{site.country}</span>
-                      <span className="text-neutral-500 mx-1">•</span>
-                      <span className="text-xs">{site.language}</span>
-                    </TableCell>
-                    <TableCell className="text-neutral-300">
-                      {`${site.da}/${site.pa}/${site.dr}`}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={styles.chip}>
-                        {site.spamScore}%
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-neutral-300">
-                      ${site.publishing.price.toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize text-xs">
-                        {site.toolScores.trafficTrend}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          {visibleColumns.map(columnKey => {
+                            const isNiche = columnKey === 'niche'
+                            return (
+                              <TableCell 
+                                key={columnKey} 
+                                className={cn(
+                                  isNiche ? 'max-w-[320px] whitespace-normal break-words' : 'whitespace-nowrap',
+                                  rowLevel !== 'custom' ? rowPaddingByLevel[rowLevel] : ''
+                                )}
+                              >
+                                {renderColumnCell(site, columnKey)}
+                              </TableCell>
+                            )
+                          })}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
+          
+          {/* Column visibility info */}
+          {visibleColumns.length !== allColumns.length && (
+            <div className="text-xs text-slate-500 dark:text-neutral-500 text-center">
+              Showing {visibleColumns.length} of {allColumns.length} available columns
+            </div>
+          )}
         </section>
       </div>
 
@@ -737,20 +1382,36 @@ export default function CompactFilterPage() {
       {renderFilterModal()}
 
       {/* Site Details Modal */}
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="sm:max-w-[90vw] md:max-w-[85vw] lg:max-w-[80vw] max-h-[70vh] overflow-y-auto bg-neutral-900 text-white border-neutral-700">
-          <DialogHeader className="sticky top-0 z-10 bg-neutral-900/95 backdrop-blur border-b border-neutral-800 pb-4">
-            <DialogTitle className="text-xl">{selectedSite?.name}</DialogTitle>
-            <DialogDescription className="text-neutral-400">
+      <Dialog open={detailsOpen} onOpenChange={(open) => !loading && setDetailsOpen(open)}>
+        <DialogContent className="sm:max-w-[90vw] md:max-w-[85vw] lg:max-w-[80vw] max-h-[70vh] overflow-y-auto bg-white dark:bg-neutral-900 text-slate-900 dark:text-white border-slate-200 dark:border-neutral-700">
+          <DialogHeader className="sticky top-0 z-10 bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-b border-slate-200 dark:border-neutral-800 pb-4">
+            <DialogTitle className="text-xl">
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                selectedSite?.name
+              )}
+            </DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-neutral-400">
               {selectedSite?.url}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            {selectedSite ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center gap-3 text-slate-600 dark:text-neutral-400">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <span>Loading site details...</span>
+                </div>
+              </div>
+            ) : selectedSite ? (
               <SiteDetails site={selectedSite} />
             ) : (
-              <p className="text-neutral-400">No site selected</p>
+              <p className="text-slate-600 dark:text-neutral-400">No site selected</p>
             )}
           </div>
         </DialogContent>
@@ -787,8 +1448,8 @@ function SiteDetails({ site }: { site: Site }) {
         </InfoCard>
 
         <InfoCard title="Publishing Details">
-          <InfoItem label="Price" value={`${site.publishing.price}`} />
-          <InfoItem label="Price with Content" value={`${site.publishing.priceWithContent}`} />
+          <InfoItem label="Price" value={`${site.publishing.price.toLocaleString()}`} />
+          <InfoItem label="Price with Content" value={`${site.publishing.priceWithContent.toLocaleString()}`} />
           <InfoItem label="Word Limit" value={`${site.publishing.wordLimit}`} />
           <InfoItem label="TAT Days" value={`${site.publishing.tatDays}`} />
           <InfoItem label="Backlink Nature" value={site.publishing.backlinkNature} />
@@ -815,9 +1476,9 @@ function SiteDetails({ site }: { site: Site }) {
 
 function InfoCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card className="bg-neutral-800 border-neutral-700">
+    <Card className="bg-slate-100 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-neutral-300">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium text-slate-700 dark:text-neutral-300">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {children}
@@ -829,13 +1490,13 @@ function InfoCard({ title, children }: { title: string; children: ReactNode }) {
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-start">
-      <span className="text-xs text-neutral-400 flex-shrink-0">{label}</span>
-      <span className="text-xs text-white text-right ml-2 break-words">{value}</span>
+      <span className="text-xs text-slate-500 dark:text-neutral-400 flex-shrink-0">{label}</span>
+      <span className="text-xs text-slate-900 dark:text-white text-right ml-2 break-words">{value}</span>
     </div>
   )
 }
 
-// Filter function - simplified for demo
+// Filter function - works with the Site type
 function applyFilters(list: Site[], f: Filters) {
   return list.filter((s) => {
     const inStr = (a: string, b: string) => a.toLowerCase().includes(b.toLowerCase())
@@ -853,9 +1514,28 @@ function applyFilters(list: Site[], f: Filters) {
     if (f.drMax !== undefined && s.dr > f.drMax) return false
     if (f.spamMin !== undefined && s.spamScore < f.spamMin) return false
     if (f.spamMax !== undefined && s.spamScore > f.spamMax) return false
+    if (f.semrushAuthorityMin !== undefined && s.toolScores.semrushAuthority < f.semrushAuthorityMin) return false
+    if (f.semrushOverallTrafficMin !== undefined && s.toolScores.semrushOverallTraffic < f.semrushOverallTrafficMin) return false
+    if (f.semrushOrganicTrafficMin !== undefined && s.toolScores.semrushOrganicTraffic < f.semrushOrganicTrafficMin) return false
     if (f.priceMin !== undefined && s.publishing.price < f.priceMin) return false
     if (f.priceMax !== undefined && s.publishing.price > f.priceMax) return false
+    if (f.priceWithContentMin !== undefined && s.publishing.priceWithContent < f.priceWithContentMin) return false
+    if (f.priceWithContentMax !== undefined && s.publishing.priceWithContent > f.priceWithContentMax) return false
+    if (f.wordLimitMin !== undefined && s.publishing.wordLimit < f.wordLimitMin) return false
+    if (f.wordLimitMax !== undefined && s.publishing.wordLimit > f.wordLimitMax) return false
+    if (f.tatDaysMin !== undefined && s.publishing.tatDays < f.tatDaysMin) return false
+    if (f.tatDaysMax !== undefined && s.publishing.tatDays > f.tatDaysMax) return false
+    if (f.backlinksAllowedMin !== undefined && s.publishing.backlinksAllowed < f.backlinksAllowedMin) return false
+    if (f.outboundLinkLimitMax !== undefined && s.quality.outboundLinkLimit > f.outboundLinkLimitMax) return false
     if (f.trend && s.toolScores.trafficTrend !== f.trend) return false
+    if (f.backlinkNature && s.publishing.backlinkNature !== f.backlinkNature) return false
+    if (f.linkPlacement && s.publishing.linkPlacement !== f.linkPlacement) return false
+    if (f.permanence && s.publishing.permanence !== f.permanence) return false
+    if (f.sampleUrl && s.quality.sampleUrl && !inStr(s.quality.sampleUrl, f.sampleUrl)) return false
+    if (f.remarkIncludes && s.quality.remark && !inStr(s.quality.remark, f.remarkIncludes)) return false
+    if (f.guidelinesUrlIncludes && s.quality.guidelinesUrl && !inStr(s.quality.guidelinesUrl, f.guidelinesUrlIncludes)) return false
+    if (f.disclaimerIncludes && s.additional.disclaimer && !inStr(s.additional.disclaimer, f.disclaimerIncludes)) return false
+    if (f.lastPublishedAfter && new Date(s.quality.lastPublished) < new Date(f.lastPublishedAfter)) return false
     if (typeof f.availability === "boolean" && s.additional.availability !== f.availability) return false
     return true
   })

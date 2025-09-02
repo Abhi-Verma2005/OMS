@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test:webhook": "node scripts/test-webhook.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
