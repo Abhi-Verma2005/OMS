@@ -3,11 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "dev": "prisma generate && next dev",
     "lint": "next lint",
     "start": "next start",
-    "test:webhook": "node scripts/test-webhook.mjs"
+    "test:webhook": "node scripts/test-webhook.mjs",
+    "postinstall": "prisma generate",
+    "setup": "node scripts/setup-prisma.mjs",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@auth/core": "^0.40.0",

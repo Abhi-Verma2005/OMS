@@ -119,10 +119,6 @@ type Filters = {
   trend?: Trend
   priceMin?: number
   priceMax?: number
-  priceWithContentMin?: number
-  priceWithContentMax?: number
-  wordLimitMin?: number
-  wordLimitMax?: number
   tatDaysMax?: number
   tatDaysMin?: number
   permanenceMinMonths?: number
@@ -219,8 +215,6 @@ const filterPebbles: FilterPebble[] = [
   
   // Publishing
   { key: "priceMin", label: "Price Range", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
-  { key: "priceWithContentMin", label: "Price with Content", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
-  { key: "wordLimitMin", label: "Word Limit", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
   { key: "tatDaysMax", label: "TAT Days", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
   { key: "backlinkNature", label: "Backlink Nature", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
   { key: "linkPlacement", label: "Link Placement", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
@@ -285,8 +279,6 @@ export default function CompactFilterPage() {
     if (f.spamMax !== undefined) apiFilters.spamScore = { ...apiFilters.spamScore, max: f.spamMax }
     if (f.priceMin !== undefined) apiFilters.costPrice = { ...apiFilters.costPrice, min: f.priceMin }
     if (f.priceMax !== undefined) apiFilters.costPrice = { ...apiFilters.costPrice, max: f.priceMax }
-    if (f.priceWithContentMin !== undefined) apiFilters.sellingPrice = { ...apiFilters.sellingPrice, min: f.priceWithContentMin }
-    if (f.priceWithContentMax !== undefined) apiFilters.sellingPrice = { ...apiFilters.sellingPrice, max: f.priceWithContentMax }
     if (f.semrushOverallTrafficMin !== undefined) apiFilters.semrushTraffic = { ...apiFilters.semrushTraffic, min: f.semrushOverallTrafficMin }
     if (f.semrushOrganicTrafficMin !== undefined) apiFilters.semrushOrganicTraffic = { ...apiFilters.semrushOrganicTraffic, min: f.semrushOrganicTrafficMin }
     if (f.niche) apiFilters.niche = f.niche
@@ -463,19 +455,7 @@ export default function CompactFilterPage() {
     return { min, max }
   }, [sites])
   
-  const priceWithContentBounds = useMemo(() => {
-    if (!sites.length) return { min: 0, max: 1500 }
-    let min = Number.POSITIVE_INFINITY
-    let max = 0
-    for (const s of sites) {
-      const p = s.publishing.priceWithContent || 0
-      if (p < min) min = p
-      if (p > max) max = p
-    }
-    if (!isFinite(min)) min = 0
-    if (max < min) max = min
-    return { min, max }
-  }, [sites])
+
   
   const setNum = (k: keyof Filters, v: string) => {
     if (!loading) {
@@ -556,10 +536,6 @@ export default function CompactFilterPage() {
     add("trend", `Trend: ${filters.trend}`, filters.trend)
     add("priceMin", `$ ≥ ${filters.priceMin}`, filters.priceMin)
     add("priceMax", `$ ≤ ${filters.priceMax}`, filters.priceMax)
-    add("priceWithContentMin", `Content $ ≥ ${filters.priceWithContentMin}`, filters.priceWithContentMin)
-    add("priceWithContentMax", `Content $ ≤ ${filters.priceWithContentMax}`, filters.priceWithContentMax)
-    add("wordLimitMin", `Words ≥ ${filters.wordLimitMin}`, filters.wordLimitMin)
-    add("wordLimitMax", `Words ≤ ${filters.wordLimitMax}`, filters.wordLimitMax)
     add("tatDaysMin", `TAT ≥ ${filters.tatDaysMin}`, filters.tatDaysMin)
     add("tatDaysMax", `TAT ≤ ${filters.tatDaysMax}`, filters.tatDaysMax)
     add("permanenceMinMonths", `Permanence ≥ ${filters.permanenceMinMonths}`, filters.permanenceMinMonths)
@@ -1224,55 +1200,7 @@ export default function CompactFilterPage() {
         )
       }
 
-      case "priceWithContentMin": {
-        const minVal = filters.priceWithContentMin ?? priceWithContentBounds.min
-        const maxVal = filters.priceWithContentMax ?? priceWithContentBounds.max
-        const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
-        return (
-          <div className="space-y-3" onKeyDown={handleKeyDown}>
-            <div className="text-sm text-slate-600 dark:text-neutral-300">Select price with content range</div>
-            <div className="px-1">
-              <Slider
-                min={priceWithContentBounds.min}
-                max={priceWithContentBounds.max}
-                value={[minVal, maxVal]}
-                onValueChange={([lo, hi]) => {
-                  if (loading) return
-                  setFilters((f) => ({ ...f, priceWithContentMin: lo, priceWithContentMax: hi }))
-                }}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                className={styles.field}
-                type="number"
-                placeholder="Min"
-                value={minVal}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  if (Number.isNaN(v)) return
-                  const clamped = clamp(v, priceWithContentBounds.min, (filters.priceWithContentMax ?? priceWithContentBounds.max))
-                  setFilters((f) => ({ ...f, priceWithContentMin: clamped }))
-                }}
-                disabled={loading}
-              />
-              <Input
-                className={styles.field}
-                type="number"
-                placeholder="Max"
-                value={maxVal}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  if (Number.isNaN(v)) return
-                  const clamped = clamp(v, (filters.priceWithContentMin ?? priceWithContentBounds.min), priceWithContentBounds.max)
-                  setFilters((f) => ({ ...f, priceWithContentMax: clamped }))
-                }}
-                disabled={loading}
-              />
-            </div>
-          </div>
-        )
-      }
+
       case "language":
         return (
           <div onKeyDown={handleKeyDown}>
@@ -1384,10 +1312,6 @@ export default function CompactFilterPage() {
       case "semrushOverallTrafficMin":
       case "semrushOrganicTrafficMin":
       case "targetCountryPctMin":
-      case "priceWithContentMin":
-      case "priceWithContentMax":
-      case "wordLimitMin":
-      case "wordLimitMax":
       case "tatDaysMin":
       case "tatDaysMax":
       case "permanenceMinMonths":
@@ -2125,10 +2049,6 @@ function applyFilters(list: Site[], f: Filters) {
     if (f.semrushOrganicTrafficMin !== undefined && s.toolScores.semrushOrganicTraffic < f.semrushOrganicTrafficMin) return false
     if (f.priceMin !== undefined && s.publishing.price < f.priceMin) return false
     if (f.priceMax !== undefined && s.publishing.price > f.priceMax) return false
-    if (f.priceWithContentMin !== undefined && s.publishing.priceWithContent < f.priceWithContentMin) return false
-    if (f.priceWithContentMax !== undefined && s.publishing.priceWithContent > f.priceWithContentMax) return false
-    if (f.wordLimitMin !== undefined && s.publishing.wordLimit < f.wordLimitMin) return false
-    if (f.wordLimitMax !== undefined && s.publishing.wordLimit > f.wordLimitMax) return false
     if (f.tatDaysMin !== undefined && s.publishing.tatDays < f.tatDaysMin) return false
     if (f.tatDaysMax !== undefined && s.publishing.tatDays > f.tatDaysMax) return false
     if (f.backlinksAllowedMin !== undefined && s.publishing.backlinksAllowed < f.backlinksAllowedMin) return false
