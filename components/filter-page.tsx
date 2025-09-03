@@ -1493,8 +1493,8 @@ export default function CompactFilterPage() {
       <div className="mx-auto max-w-7xl px-4 py-6 space-y-6">
         
         {/* Compact Filter Pebbles Section */}
-        <Card className={cn(styles.panel, "p-6")}>
-          <div className="flex items-center justify-between mb-4">
+        <Card className={cn(styles.panel, "p-4")}>
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-yellow-500" />
               <h2 className="text-lg font-semibold">Filters</h2>
@@ -1504,27 +1504,27 @@ export default function CompactFilterPage() {
                 variant="outline" 
                 onClick={() => fetchData(convertFiltersToAPI(filters))} 
                 disabled={loading}
-                className="h-8 text-xs"
+                className="h-7 text-xs"
               >
                 {loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
                 Refresh
               </Button>
-              <Button variant="secondary" onClick={reset} className="h-8 text-xs">
+              <Button variant="secondary" onClick={reset} className="h-7 text-xs">
                 Reset All
               </Button>
             </div>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-3">
             {Object.entries(groupedPebbles).map(([category, pebbles]) => (
-              <div key={category} className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <div key={category} className="space-y-1.5">
+                <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
                   {categoryIcons[category as keyof typeof categoryIcons]}
                   <span className="font-medium">
                     {categoryLabels[category as keyof typeof categoryLabels]}
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {pebbles.map((pebble) => {
                     const hasValue = filters[pebble.key] !== undefined && 
                                    filters[pebble.key] !== "" && 
@@ -1536,7 +1536,7 @@ export default function CompactFilterPage() {
                         onClick={() => openFilterModal(pebble.key)}
                         disabled={loading}
                         className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-all duration-200 hover:scale-105",
+                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border transition-all duration-200 hover:scale-105",
                           hasValue 
                             ? "bg-yellow-500 text-gray-900 border-yellow-500 shadow-md" 
                             : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600",
@@ -1558,16 +1558,16 @@ export default function CompactFilterPage() {
 
         {/* Active Filters Chips */}
         {activeChips.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
                 <Filter className="w-4 h-4" />
                 <span className="font-medium">Active Filters ({activeChips.length})</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Input
-                    className={cn(styles.field, "h-8 pr-8 text-xs w-64")}
+                    className={cn(styles.field, "h-8 pr-8 text-xs w-60")}
                     placeholder="Search by website name or URL"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -1595,13 +1595,13 @@ export default function CompactFilterPage() {
                 </Button>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {activeChips.map((chip) => (
                 <button
                   key={chip.label}
                   onClick={() => openFilterModal(chip.key)}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm bg-yellow-500 text-gray-900 border border-yellow-500 hover:bg-yellow-400 transition-all duration-200 hover:scale-105 cursor-pointer group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs bg-yellow-500 text-gray-900 border border-yellow-500 hover:bg-yellow-400 transition-all duration-200 hover:scale-105 cursor-pointer group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   title={`Click to edit ${chip.label}`}
                 >
                   <span className="font-medium">{chip.label}</span>
@@ -1672,7 +1672,7 @@ export default function CompactFilterPage() {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {/* Row height/detail control */}
               <Popover>
                 <PopoverTrigger asChild>
@@ -1680,7 +1680,7 @@ export default function CompactFilterPage() {
                     variant="outline" 
                     size="sm" 
                     disabled={loading}
-                    className="h-8 border-slate-300 dark:border-neutral-700 hover:bg-slate-100 dark:hover:bg-neutral-800 disabled:opacity-50"
+                    className="h-7 border-slate-300 dark:border-neutral-700 hover:bg-slate-100 dark:hover:bg-neutral-800 disabled:opacity-50"
                   >
                     <Settings className="w-4 h-4 mr-2" />
                     {rowLevel === 'custom' ? 'Rows: Custom' : `Rows: ${levelLabels[rowLevel]}`}
@@ -1692,7 +1692,7 @@ export default function CompactFilterPage() {
                       <button
                         key={lvl}
                         className={cn(
-                          'w-full text-left px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-neutral-800 text-sm text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed',
+                          'w-full text-left px-3 py-1.5 rounded hover:bg-slate-100 dark:hover:bg-neutral-800 text-sm text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed',
                           rowLevel === lvl && 'bg-slate-100 dark:bg-neutral-800'
                         )}
                         onClick={() => applyRowLevel(lvl)}
@@ -1722,7 +1722,7 @@ export default function CompactFilterPage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80 bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-700" align="end">
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-slate-900 dark:text-white">Manage Columns</h4>
                       <div className="flex gap-2">
@@ -1747,13 +1747,13 @@ export default function CompactFilterPage() {
                       </div>
                     </div>
                     
-                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                    <div className="space-y-2.5 max-h-80 overflow-y-auto">
                       {Object.entries(getColumnsByCategory()).map(([category, columns]) => (
-                        <div key={category} className="space-y-2">
+                        <div key={category} className="space-y-1.5">
                           <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 uppercase tracking-wide">
                             {category.replace(/([A-Z])/g, ' $1').trim()}
                           </div>
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             {columns.map((column) => (
                               <div 
                                 key={column.key} 
