@@ -69,9 +69,37 @@ const COUNTRY_NAMES: string[] = [
   "Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
 ]
 
+// Popular languages for dropdown
+const POPULAR_LANGUAGES: string[] = [
+  "English", "Spanish", "French", "German", "Italian", "Portuguese", "Dutch", "Russian", "Chinese", "Japanese",
+  "Korean", "Arabic", "Hindi", "Turkish", "Polish", "Swedish", "Norwegian", "Danish", "Finnish", "Greek",
+  "Hebrew", "Thai", "Vietnamese", "Indonesian", "Malay", "Tagalog", "Czech", "Hungarian", "Romanian", "Bulgarian",
+  "Croatian", "Serbian", "Slovak", "Slovenian", "Lithuanian", "Latvian", "Estonian", "Ukrainian", "Belarusian", "Georgian"
+]
+
+// Common niches for recommendations
+const COMMON_NICHES: string[] = [
+  "Technology", "Health & Fitness", "Finance", "Travel", "Food & Cooking", "Fashion", "Beauty", "Home & Garden",
+  "Business", "Marketing", "Education", "Entertainment", "Sports", "Automotive", "Real Estate", "Parenting",
+  "Pets", "DIY & Crafts", "Photography", "Art & Design", "Music", "Books & Literature", "Gaming", "Cryptocurrency",
+  "Sustainability", "Mental Health", "Career Development", "Productivity", "Lifestyle", "Wedding", "Pregnancy",
+  "Senior Living", "Teenagers", "Kids", "Outdoor Activities", "Hobbies", "Collectibles", "Antiques", "Vintage",
+  "Minimalism", "Self-Improvement", "Spirituality", "Religion", "Politics", "News", "Science", "Environment",
+  "Renewable Energy", "Green Living", "Organic", "Vegan", "Vegetarian", "Gluten-Free", "Keto", "Paleo",
+  "Meditation", "Yoga", "Running", "Cycling", "Swimming", "Weightlifting", "CrossFit", "Pilates", "Dancing",
+  "Singing", "Acting", "Theater", "Movies", "TV Shows", "Streaming", "Podcasts", "Blogging", "Vlogging",
+  "Social Media", "Influencer Marketing", "E-commerce", "Dropshipping", "Affiliate Marketing", "SEO", "PPC",
+  "Content Marketing", "Email Marketing", "Social Media Marketing", "Digital Marketing", "Web Development",
+  "Mobile Apps", "Software", "AI & Machine Learning", "Data Science", "Cybersecurity", "Cloud Computing",
+  "Blockchain", "NFTs", "Web3", "Metaverse", "Virtual Reality", "Augmented Reality", "IoT", "Robotics",
+  "Automation", "Productivity Tools", "Project Management", "Remote Work", "Freelancing", "Entrepreneurship",
+  "Startups", "Investing", "Trading", "Personal Finance", "Retirement Planning", "Insurance", "Taxes",
+  "Real Estate Investing", "Stock Market", "Bonds", "Mutual Funds", "ETFs", "Forex", "Commodities", "Gold",
+  "Silver", "Precious Metals", "Collectibles", "Art Investment", "Wine Investment", "Antique Investment"
+]
+
 type Filters = {
   niche: string
-  category: string
   language: string
   country: string
   daMin?: number
@@ -148,7 +176,6 @@ const allColumns: ColumnConfig[] = [
 
 const defaultFilters: Filters = {
   niche: "",
-  category: "",
   language: "",
   country: "",
 }
@@ -156,12 +183,12 @@ const defaultFilters: Filters = {
 const defaultVisibleColumns: ColumnKey[] = ['name', 'niche', 'countryLang', 'authority', 'spam', 'price', 'trend']
 
 const styles = {
-  surface: "bg-white dark:bg-neutral-950 text-slate-900 dark:text-white",
-  panel: "bg-slate-50 dark:bg-neutral-900 text-slate-900 dark:text-white border border-slate-200 dark:border-neutral-800",
-  field: "bg-white dark:bg-neutral-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-neutral-400 border border-slate-300 dark:border-neutral-700 focus-visible:ring-2 focus-visible:ring-yellow-500",
-  select: "bg-white dark:bg-neutral-800 text-slate-900 dark:text-white border border-slate-300 dark:border-neutral-700",
-  menu: "bg-white dark:bg-neutral-900 text-slate-900 dark:text-white border border-slate-300 dark:border-neutral-700",
-  chip: "bg-yellow-500 text-black",
+  surface: "bg-white dark:bg-gray-950 text-gray-900 dark:text-white",
+  panel: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800",
+  field: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 border border-gray-300 dark:border-gray-700 focus-visible:ring-2 focus-visible:ring-yellow-500",
+  select: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700",
+  menu: "bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700",
+  chip: "bg-yellow-500 text-gray-900",
 }
 
 type FilterPebble = {
@@ -174,7 +201,6 @@ type FilterPebble = {
 const filterPebbles: FilterPebble[] = [
   // Basic
   { key: "niche", label: "Niche", icon: <FileStack className="w-3 h-3" />, category: "basic" },
-  { key: "category", label: "Category", icon: <FileStack className="w-3 h-3" />, category: "basic" },
   { key: "language", label: "Language", icon: <FileStack className="w-3 h-3" />, category: "basic" },
   { key: "country", label: "Country", icon: <FileStack className="w-3 h-3" />, category: "basic" },
   
@@ -219,6 +245,8 @@ export default function CompactFilterPage() {
   const [allCountries, setAllCountries] = useState<string[]>(COUNTRY_NAMES)
   const [countrySearch, setCountrySearch] = useState<string>("")
   const [searchQuery, setSearchQuery] = useState<string>("")
+  const [nicheSearch, setNicheSearch] = useState<string>("")
+  const [showNicheSuggestions, setShowNicheSuggestions] = useState<boolean>(false)
   
 
   // Row presets: progressively reveal more data
@@ -262,7 +290,6 @@ export default function CompactFilterPage() {
     if (f.semrushOverallTrafficMin !== undefined) apiFilters.semrushTraffic = { ...apiFilters.semrushTraffic, min: f.semrushOverallTrafficMin }
     if (f.semrushOrganicTrafficMin !== undefined) apiFilters.semrushOrganicTraffic = { ...apiFilters.semrushOrganicTraffic, min: f.semrushOrganicTrafficMin }
     if (f.niche) apiFilters.niche = f.niche
-    if (f.category) apiFilters.priceCategory = f.category
     if (f.language) apiFilters.language = f.language
     if (f.country) apiFilters.webCountry = f.country
     if (f.backlinkNature) apiFilters.linkAttribute = f.backlinkNature
@@ -510,7 +537,6 @@ export default function CompactFilterPage() {
     }
     // Website URL/Name removed
     add("niche", `Niche: ${filters.niche}`, filters.niche)
-    add("category", `Category: ${filters.category}`, filters.category)
     add("language", `Lang: ${filters.language}`, filters.language)
     add("country", `Country: ${filters.country}`, filters.country)
     add("daMin", `DA ≥ ${filters.daMin}`, filters.daMin)
@@ -577,18 +603,18 @@ export default function CompactFilterPage() {
               {site.name}
             </a>
             {rowLevel !== 'custom' && rowLevel >= 2 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
                 {site.url.replace(/^https?:\/\//, "")}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Category:</span> {site.category}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Category:</span> {site.category}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Language:</span> {site.language}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Language:</span> {site.language}
               </div>
             ) : null}
           </div>
@@ -612,13 +638,13 @@ export default function CompactFilterPage() {
                 ))}
             </div>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Type:</span> {site.category}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Type:</span> {site.category}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Country:</span> {site.country}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Country:</span> {site.country}
               </div>
             ) : null}
           </div>
@@ -626,19 +652,19 @@ export default function CompactFilterPage() {
       case 'countryLang':
         return (
           <div>
-            <span className="text-slate-700 dark:text-neutral-300">
+            <span className="text-gray-700 dark:text-gray-300">
               <span>{site.country}</span>
-              <span className="text-slate-400 dark:text-neutral-500 mx-1">•</span>
+              <span className="text-gray-400 dark:text-gray-500 mx-1">•</span>
               <span className="text-xs">{site.language}</span>
             </span>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Region:</span> {site.country}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Region:</span> {site.country}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Locale:</span> {site.language}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Locale:</span> {site.language}
               </div>
             ) : null}
           </div>
@@ -646,15 +672,15 @@ export default function CompactFilterPage() {
       case 'authority':
         return (
           <div>
-            <span className="text-slate-700 dark:text-neutral-300">{`${site.da}/${site.pa}/${site.dr}`}</span>
+            <span className="text-gray-700 dark:text-gray-300">{`${site.da}/${site.pa}/${site.dr}`}</span>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">DA:</span> {site.da}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">DA:</span> {site.da}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">PA:</span> {site.pa} | <span className="text-slate-400 dark:text-neutral-500">DR:</span> {site.dr}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">PA:</span> {site.pa} | <span className="text-gray-400 dark:text-gray-500">DR:</span> {site.dr}
               </div>
             ) : null}
           </div>
@@ -666,13 +692,13 @@ export default function CompactFilterPage() {
               {site.spamScore}%
             </Badge>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Score:</span> {site.spamScore}/10
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Score:</span> {site.spamScore}/10
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Risk:</span> {site.spamScore <= 3 ? 'Low' : site.spamScore <= 6 ? 'Medium' : 'High'}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Risk:</span> {site.spamScore <= 3 ? 'Low' : site.spamScore <= 6 ? 'Medium' : 'High'}
               </div>
             ) : null}
           </div>
@@ -680,15 +706,15 @@ export default function CompactFilterPage() {
       case 'price':
         return (
           <div>
-            <span className="text-slate-700 dark:text-neutral-300">${site.publishing.price.toLocaleString()}</span>
+            <span className="text-gray-700 dark:text-gray-300">${site.publishing.price.toLocaleString()}</span>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Base:</span> ${site.publishing.price}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Base:</span> ${site.publishing.price}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">With Content:</span> ${site.publishing.priceWithContent}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">With Content:</span> ${site.publishing.priceWithContent}
               </div>
             ) : null}
           </div>
@@ -696,34 +722,34 @@ export default function CompactFilterPage() {
       case 'priceWithContent':
         return (
           <div>
-            <span className="text-slate-700 dark:text-neutral-300">${site.publishing.priceWithContent.toLocaleString()}</span>
+            <span className="text-gray-700 dark:text-gray-300">${site.publishing.priceWithContent.toLocaleString()}</span>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Base:</span> ${site.publishing.price}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Base:</span> ${site.publishing.price}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Difference:</span> +${site.publishing.priceWithContent - site.publishing.price}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Difference:</span> +${site.publishing.priceWithContent - site.publishing.price}
               </div>
             ) : null}
           </div>
         )
       case 'traffic':
         return (
-          <div className="text-slate-700 dark:text-neutral-300 text-sm">
+          <div className="text-gray-700 dark:text-gray-300 text-sm">
             <div>{(site.toolScores.semrushOverallTraffic / 1000000).toFixed(1)}M</div>
             {rowLevel !== 'custom' && rowLevel >= 2 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400">overall</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">overall</div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Organic:</span> {(site.toolScores.semrushOrganicTraffic / 1000000).toFixed(1)}M
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Organic:</span> {(site.toolScores.semrushOrganicTraffic / 1000000).toFixed(1)}M
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Authority:</span> {site.toolScores.semrushAuthority}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Authority:</span> {site.toolScores.semrushAuthority}
               </div>
             ) : null}
           </div>
@@ -735,13 +761,13 @@ export default function CompactFilterPage() {
               {site.toolScores.trafficTrend}
             </Badge>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Status:</span> {site.toolScores.trafficTrend}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Status:</span> {site.toolScores.trafficTrend}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Change:</span> {site.toolScores.trafficTrend === 'increasing' ? '↗' : site.toolScores.trafficTrend === 'decreasing' ? '↘' : '→'}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Change:</span> {site.toolScores.trafficTrend === 'increasing' ? '↗' : site.toolScores.trafficTrend === 'decreasing' ? '↘' : '→'}
               </div>
             ) : null}
           </div>
@@ -749,15 +775,15 @@ export default function CompactFilterPage() {
       case 'wordLimit':
         return (
           <div>
-            <span className="text-slate-700 dark:text-neutral-300">{site.publishing.wordLimit}</span>
+            <span className="text-gray-700 dark:text-gray-300">{site.publishing.wordLimit}</span>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Min:</span> {site.publishing.wordLimit}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Min:</span> {site.publishing.wordLimit}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">TAT:</span> {site.publishing.tatDays}d
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">TAT:</span> {site.publishing.tatDays}d
               </div>
             ) : null}
           </div>
@@ -765,15 +791,15 @@ export default function CompactFilterPage() {
       case 'tat':
         return (
           <div>
-            <span className="text-slate-700 dark:text-neutral-300">{site.publishing.tatDays}d</span>
+            <span className="text-gray-700 dark:text-gray-300">{site.publishing.tatDays}d</span>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Days:</span> {site.publishing.tatDays}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Days:</span> {site.publishing.tatDays}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Word Limit:</span> {site.publishing.wordLimit}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Word Limit:</span> {site.publishing.wordLimit}
               </div>
             ) : null}
           </div>
@@ -785,13 +811,13 @@ export default function CompactFilterPage() {
               {site.publishing.linkPlacement.replace('-', ' ')}
             </Badge>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Type:</span> {site.publishing.linkPlacement.replace('-', ' ')}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Type:</span> {site.publishing.linkPlacement.replace('-', ' ')}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Nature:</span> {site.publishing.backlinkNature}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Nature:</span> {site.publishing.backlinkNature}
               </div>
             ) : null}
           </div>
@@ -803,13 +829,13 @@ export default function CompactFilterPage() {
               {site.publishing.permanence === 'lifetime' ? 'Lifetime' : '12m'}
             </Badge>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Duration:</span> {site.publishing.permanence === 'lifetime' ? 'Lifetime' : '12 months'}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Duration:</span> {site.publishing.permanence === 'lifetime' ? 'Lifetime' : '12 months'}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Backlinks:</span> {site.publishing.backlinksAllowed}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Backlinks:</span> {site.publishing.backlinksAllowed}
               </div>
             ) : null}
           </div>
@@ -825,13 +851,13 @@ export default function CompactFilterPage() {
               )}
             </div>
             {rowLevel !== 'custom' && rowLevel >= 3 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Status:</span> {site.additional.availability ? 'Available' : 'Unavailable'}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Status:</span> {site.additional.availability ? 'Available' : 'Unavailable'}
               </div>
             ) : null}
             {rowLevel !== 'custom' && rowLevel >= 4 ? (
-              <div className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-                <span className="text-slate-400 dark:text-neutral-500">Last Published:</span> {site.quality.lastPublished}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span className="text-gray-400 dark:text-gray-500">Last Published:</span> {site.quality.lastPublished}
               </div>
             ) : null}
           </div>
@@ -852,13 +878,13 @@ export default function CompactFilterPage() {
 
     return (
       <Dialog open={filterModalOpen} onOpenChange={(open) => !loading && setFilterModalOpen(open)}>
-        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-neutral-900 text-slate-900 dark:text-white border-slate-200 dark:border-neutral-700">
+        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {pebble.icon}
               {pebble.label}
             </DialogTitle>
-            <DialogDescription className="text-slate-600 dark:text-neutral-400">
+            <DialogDescription className="text-gray-600 dark:text-gray-400">
               {hasValue 
                 ? `Edit your ${pebble.label.toLowerCase()} filter` 
                 : `Configure your ${pebble.label.toLowerCase()} filter`
@@ -1247,9 +1273,96 @@ export default function CompactFilterPage() {
           </div>
         )
       }
-      case "niche":
-      case "category":
       case "language":
+        return (
+          <div onKeyDown={handleKeyDown}>
+            <Select
+              value={filters.language || ""}
+              onValueChange={(val) => {
+                if (loading) return
+                const next = val === "__ALL__" ? "" : val
+                setFilters((f) => ({ ...f, language: next }))
+              }}
+              disabled={loading}
+            >
+              <SelectTrigger className={styles.select}>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent className={cn(styles.menu, "p-0 max-h-72 overflow-hidden")}>
+                <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 p-2 border-b border-slate-200 dark:border-neutral-800">
+                  <Input
+                    className={styles.field}
+                    placeholder="Search languages"
+                    value={countrySearch}
+                    onChange={(e) => setCountrySearch(e.target.value)}
+                  />
+                </div>
+                <SelectItem value="__ALL__">All languages</SelectItem>
+                {(() => {
+                  const list = POPULAR_LANGUAGES
+                    .filter(l => l.toLowerCase().includes(countrySearch.toLowerCase()))
+                  if (list.length === 0) {
+                    return (
+                      <div className="px-3 py-2 text-sm text-slate-500 dark:text-neutral-400">No languages found</div>
+                    )
+                  }
+                  return list.map((l) => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))
+                })()}
+              </SelectContent>
+            </Select>
+          </div>
+        )
+      
+      case "niche":
+        return (
+          <div className="space-y-2" onKeyDown={handleKeyDown}>
+            <div className="relative">
+              <Input
+                className={styles.field}
+                placeholder="Enter niche or select from suggestions"
+                value={filters.niche || ""}
+                onChange={(e) => {
+                  setStr("niche", e.target.value)
+                  setNicheSearch(e.target.value)
+                  setShowNicheSuggestions(e.target.value.length > 0)
+                }}
+                onFocus={() => setShowNicheSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowNicheSuggestions(false), 200)}
+                disabled={loading}
+              />
+              {showNicheSuggestions && nicheSearch && (
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {COMMON_NICHES
+                    .filter(niche => niche.toLowerCase().includes(nicheSearch.toLowerCase()))
+                    .slice(0, 10)
+                    .map((niche) => (
+                      <button
+                        key={niche}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                        onClick={() => {
+                          setStr("niche", niche)
+                          setNicheSearch(niche)
+                          setShowNicheSuggestions(false)
+                        }}
+                      >
+                        {niche}
+                      </button>
+                    ))
+                  }
+                  {COMMON_NICHES.filter(niche => niche.toLowerCase().includes(nicheSearch.toLowerCase())).length === 0 && (
+                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No suggestions found</div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Start typing to see niche suggestions
+            </div>
+          </div>
+        )
+      
       case "sampleUrl":
       case "remarkIncludes":
       case "guidelinesUrlIncludes":
@@ -1453,32 +1566,6 @@ export default function CompactFilterPage() {
 
   return (
     <div className={cn(styles.surface, "min-h-[100dvh]")}>
-      {/* Subtle Header */}
-      <div className="border-b border-slate-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-950/50 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Publisher Directory</h1>
-              <p className="text-sm text-slate-600 dark:text-neutral-400">Find and filter high-quality publishers for your campaigns</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-500">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Available</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span>Premium</span>
-                </div>
-              </div>
-
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="mx-auto max-w-7xl px-4 py-6 space-y-6">
         
         {/* Compact Filter Pebbles Section */}
@@ -1507,12 +1594,12 @@ export default function CompactFilterPage() {
           <div className="space-y-4">
             {Object.entries(groupedPebbles).map(([category, pebbles]) => (
               <div key={category} className="space-y-2">
-                              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-neutral-400">
-                {categoryIcons[category as keyof typeof categoryIcons]}
-                <span className="font-medium">
-                  {categoryLabels[category as keyof typeof categoryLabels]}
-                </span>
-              </div>
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  {categoryIcons[category as keyof typeof categoryIcons]}
+                  <span className="font-medium">
+                    {categoryLabels[category as keyof typeof categoryLabels]}
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {pebbles.map((pebble) => {
                     const hasValue = filters[pebble.key] !== undefined && 
@@ -1520,23 +1607,23 @@ export default function CompactFilterPage() {
                                    filters[pebble.key] !== null
                     
                     return (
-                                              <button
-                          key={pebble.key}
-                          onClick={() => openFilterModal(pebble.key)}
-                          disabled={loading}
-                          className={cn(
-                            "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-all duration-200 hover:scale-105",
-                            hasValue 
-                              ? "bg-yellow-500 text-black border-yellow-500 shadow-md" 
-                              : "bg-slate-200 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 border-slate-300 dark:border-neutral-700 hover:bg-slate-300 dark:hover:bg-neutral-700 hover:border-slate-400 dark:hover:border-neutral-600",
-                            loading && "opacity-50 cursor-not-allowed"
-                          )}
-                        >
-                          {pebble.icon}
-                          <span>{pebble.label}</span>
-                          {hasValue && <Plus className="w-3 h-3 rotate-45" />}
-                          {loading && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
-                        </button>
+                      <button
+                        key={pebble.key}
+                        onClick={() => openFilterModal(pebble.key)}
+                        disabled={loading}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-all duration-200 hover:scale-105",
+                          hasValue 
+                            ? "bg-yellow-500 text-gray-900 border-yellow-500 shadow-md" 
+                            : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600",
+                          loading && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        {pebble.icon}
+                        <span>{pebble.label}</span>
+                        {hasValue && <Plus className="w-3 h-3 rotate-45" />}
+                        {loading && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+                      </button>
                     )
                   })}
                 </div>
@@ -1549,7 +1636,7 @@ export default function CompactFilterPage() {
         {activeChips.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-neutral-400">
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <Filter className="w-4 h-4" />
                 <span className="font-medium">Active Filters ({activeChips.length})</span>
               </div>
@@ -1564,24 +1651,24 @@ export default function CompactFilterPage() {
                   />
                   {searchQuery && (
                     <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                       onClick={() => setSearchQuery("")}
                       aria-label="Clear search"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   )}
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={reset}
-                disabled={loading}
-                className="h-7 text-xs border-slate-300 dark:border-neutral-700 hover:bg-slate-100 dark:hover:bg-neutral-800"
-              >
-                {loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                Clear All
-              </Button>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={reset}
+                  disabled={loading}
+                  className="h-7 text-xs border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  {loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                  Clear All
+                </Button>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1590,7 +1677,7 @@ export default function CompactFilterPage() {
                   key={chip.label}
                   onClick={() => openFilterModal(chip.key)}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm bg-yellow-500 text-black border border-yellow-500 hover:bg-yellow-400 transition-all duration-200 hover:scale-105 cursor-pointer group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm bg-yellow-500 text-gray-900 border border-yellow-500 hover:bg-yellow-400 transition-all duration-200 hover:scale-105 cursor-pointer group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   title={`Click to edit ${chip.label}`}
                 >
                   <span className="font-medium">{chip.label}</span>
@@ -1799,10 +1886,10 @@ export default function CompactFilterPage() {
           </div>
 
           {/* Results Table */}
-          <div className="rounded-lg border border-slate-200 dark:border-neutral-800 overflow-hidden">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="flex items-center gap-3 text-slate-600 dark:text-neutral-400">
+                <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
                   <Loader2 className="w-6 h-6 animate-spin" />
                   <span>Loading data...</span>
                 </div>
@@ -1811,11 +1898,11 @@ export default function CompactFilterPage() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-200 dark:border-neutral-800">
+                    <TableRow className="border-gray-200 dark:border-gray-800">
                       {visibleColumns.map(columnKey => {
                         const column = allColumns.find(col => col.key === columnKey)
                         return (
-                          <TableHead key={columnKey} className="text-slate-600 dark:text-neutral-300 whitespace-nowrap">
+                          <TableHead key={columnKey} className="text-gray-600 dark:text-gray-300 whitespace-nowrap">
                             {column?.label}
                           </TableHead>
                         )
@@ -1825,7 +1912,7 @@ export default function CompactFilterPage() {
                   <TableBody>
                     {results.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-slate-500 dark:text-neutral-400">
+                        <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-gray-500 dark:text-gray-400">
                           No results found. Try adjusting your filters.
                         </TableCell>
                       </TableRow>
@@ -1834,7 +1921,7 @@ export default function CompactFilterPage() {
                         <TableRow
                           key={site.id}
                           className={cn(
-                            "border-slate-200 dark:border-neutral-800 hover:bg-slate-50 dark:hover:bg-neutral-900/50 cursor-pointer",
+                            "border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900/50 cursor-pointer",
                             rowLevel !== 'custom' ? rowPaddingByLevel[rowLevel] : '',
                             loading && "opacity-50 cursor-not-allowed"
                           )}
@@ -1870,7 +1957,7 @@ export default function CompactFilterPage() {
           
           {/* Column visibility info */}
           {visibleColumns.length !== allColumns.length && (
-            <div className="text-xs text-slate-500 dark:text-neutral-500 text-center">
+            <div className="text-xs text-gray-500 dark:text-gray-500 text-center">
               Showing {visibleColumns.length} of {allColumns.length} available columns
             </div>
           )}
@@ -1882,27 +1969,33 @@ export default function CompactFilterPage() {
 
       {/* Site Details Modal */}
       <Dialog open={detailsOpen} onOpenChange={(open) => !loading && setDetailsOpen(open)}>
-        <DialogContent className="sm:max-w-[90vw] md:max-w-[85vw] lg:max-w-[80vw] max-h-[70vh] overflow-y-auto bg-white dark:bg-neutral-900 text-slate-900 dark:text-white border-slate-200 dark:border-neutral-700">
-          <DialogHeader className="sticky top-0 z-10 bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-b border-slate-200 dark:border-neutral-800 pb-4">
-            <DialogTitle className="text-xl">
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Loading...
-                </div>
-              ) : (
-                selectedSite?.name
-              )}
-            </DialogTitle>
-            <DialogDescription className="text-slate-600 dark:text-neutral-400">
-              {selectedSite?.url}
-            </DialogDescription>
+        <DialogContent className="sm:max-w-[90vw] md:max-w-[85vw] lg:max-w-[80vw] max-h-[85vh] flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 p-0">
+          {/* Fixed Header */}
+          <DialogHeader className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-xl font-semibold truncate">
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Loading...
+                    </div>
+                  ) : (
+                    selectedSite?.name
+                  )}
+                </DialogTitle>
+                <DialogDescription className="text-gray-600 dark:text-gray-400 text-sm mt-1 truncate">
+                  {selectedSite?.url}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-          <div className="py-4">
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="flex items-center gap-3 text-slate-600 dark:text-neutral-400">
+                <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
                   <Loader2 className="w-6 h-6 animate-spin" />
                   <span>Loading site details...</span>
                 </div>
@@ -1910,7 +2003,7 @@ export default function CompactFilterPage() {
             ) : selectedSite ? (
               <SiteDetails site={selectedSite} />
             ) : (
-              <p className="text-slate-600 dark:text-neutral-400">No site selected</p>
+              <p className="text-gray-600 dark:text-gray-400">No site selected</p>
             )}
           </div>
         </DialogContent>
@@ -1992,9 +2085,9 @@ function SiteDetails({ site }: { site: Site }) {
 
 function InfoCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card className="bg-slate-100 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700">
+    <Card className="bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-slate-700 dark:text-neutral-300">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {children}
@@ -2006,8 +2099,8 @@ function InfoCard({ title, children }: { title: string; children: ReactNode }) {
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-start">
-      <span className="text-xs text-slate-500 dark:text-neutral-400 flex-shrink-0">{label}</span>
-      <span className="text-xs text-slate-900 dark:text-white text-right ml-2 break-words">{value}</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">{label}</span>
+      <span className="text-xs text-gray-900 dark:text-white text-right ml-2 break-words">{value}</span>
     </div>
   )
 }
@@ -2017,7 +2110,6 @@ function applyFilters(list: Site[], f: Filters) {
   return list.filter((s) => {
     const inStr = (a: string, b: string) => a.toLowerCase().includes(b.toLowerCase())
     if (f.niche && !inStr(s.niche, f.niche)) return false
-    if (f.category && !inStr(s.category, f.category)) return false
     if (f.language && s.language.toLowerCase() !== f.language.toLowerCase()) return false
     if (f.country && s.country.toLowerCase() !== f.country.toLowerCase()) return false
     if (f.daMin !== undefined && s.da < f.daMin) return false

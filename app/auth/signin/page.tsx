@@ -1,0 +1,75 @@
+import { Suspense } from "react"
+import { redirect } from "next/navigation"
+import { auth } from "@/lib/auth"
+import { SignInForm } from "@/components/auth/sign-in-form"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { SignInButton } from "@/components/auth/sign-in-button"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
+import Link from "next/link"
+
+export default async function SignInPage() {
+  const session = await auth()
+  
+  if (session) {
+    redirect('/dashboard')
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Welcome back</h1>
+          <p className="text-muted-foreground">Sign in to your account</p>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign In</CardTitle>
+            <CardDescription>
+              Choose your preferred sign-in method
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Suspense fallback={<div>Loading...</div>}>
+              <SignInButton provider="google" />
+              <SignInButton provider="discord" />
+            </Suspense>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with email
+                </span>
+              </div>
+            </div>
+            
+            <SignInForm />
+            
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <Link href="/auth/signup" className="text-primary hover:underline">
+                  Sign up
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <div className="text-center">
+          <Button variant="ghost" asChild>
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to home
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}

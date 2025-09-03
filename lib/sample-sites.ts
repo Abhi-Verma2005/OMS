@@ -278,6 +278,7 @@ export function transformAPISiteToSite(apiSite: APISite): Site {
     },
     publishing: {
       price: apiSite.costPrice || 0,
+      
       priceWithContent: apiSite.sellingPrice || 0,
       wordLimit: 1000, // Not available in API
       tatDays: parseInt(apiSite.turnAroundTime) || 0,
