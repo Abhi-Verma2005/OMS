@@ -35,6 +35,7 @@ import {
   Loader2
 } from "lucide-react"
 import { Site, fetchSitesWithFilters, transformAPISiteToSite, APIFilters, fetchCategoryRecommendations, CategoryRecommendation } from "@/lib/sample-sites"
+import { useCart } from "@/contexts/cart-context"
 
 // Site type is now imported from lib/sample-sites
 
@@ -137,13 +138,13 @@ type Filters = {
 }
 
 // Column definitions
-type ColumnKey = 'name' | 'niche' | 'category' | 'countryLang' | 'authority' | 'spam' | 'price' | 'priceWithContent' | 'traffic' | 'organicTraffic' | 'semrushAuth' | 'trend' | 'wordLimit' | 'tat' | 'backlinkNature' | 'backlinksAllowed' | 'linkPlacement' | 'permanence' | 'lastPublished' | 'outboundLinks' | 'availability' | 'remark'
+type ColumnKey = 'name' | 'niche' | 'category' | 'countryLang' | 'authority' | 'spam' | 'price' | 'priceWithContent' | 'traffic' | 'organicTraffic' | 'semrushAuth' | 'trend' | 'wordLimit' | 'tat' | 'backlinkNature' | 'backlinksAllowed' | 'linkPlacement' | 'permanence' | 'lastPublished' | 'outboundLinks' | 'availability' | 'remark' | 'cart'
 
 type ColumnConfig = {
   key: ColumnKey
   label: string
   width?: string
-  category: 'basic' | 'authority' | 'pricing' | 'traffic' | 'publishing' | 'quality' | 'status'
+  category: 'basic' | 'authority' | 'pricing' | 'traffic' | 'publishing' | 'quality' | 'status' | 'actions'
 }
 
 const allColumns: ColumnConfig[] = [
@@ -167,7 +168,8 @@ const allColumns: ColumnConfig[] = [
   { key: 'lastPublished', label: 'Last Published', category: 'quality' },
   { key: 'outboundLinks', label: 'Outbound Limit', category: 'quality' },
   { key: 'remark', label: 'Remark', category: 'quality' },
-  { key: 'availability', label: 'Available', category: 'status' }
+  { key: 'availability', label: 'Available', category: 'status' },
+  { key: 'cart', label: 'Cart', category: 'actions' }
 ]
 
 const defaultFilters: Filters = {
@@ -176,7 +178,7 @@ const defaultFilters: Filters = {
   country: "",
 }
 
-const defaultVisibleColumns: ColumnKey[] = ['name', 'niche', 'countryLang', 'authority', 'spam', 'price', 'trend']
+const defaultVisibleColumns: ColumnKey[] = ['name', 'niche', 'countryLang', 'authority', 'spam', 'price', 'trend', 'cart']
 
 const styles = {
   surface: "bg-white dark:bg-gray-950 text-gray-900 dark:text-white",
@@ -233,6 +235,7 @@ export default function CompactFilterPage() {
   const [sites, setSites] = useState<Site[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { addItem, isItemInCart } = useCart()
   const [lastFetched, setLastFetched] = useState<Date | null>(null)
   const [views, setViews] = useState<Array<{ id: string; name: string; filters: any }>>([])
   const [viewName, setViewName] = useState<string>("")
@@ -252,9 +255,9 @@ export default function CompactFilterPage() {
 
   // Row presets: progressively reveal more data
   const rowLevelPresets: Record<Exclude<RowLevel, 'custom'>, ColumnKey[]> = {
-    1: ['name', 'niche', 'price'],
+    1: ['name', 'niche', 'price', 'cart'],
     2: defaultVisibleColumns,
-    3: ['name', 'niche', 'countryLang', 'authority', 'spam', 'price', 'priceWithContent', 'trend', 'wordLimit', 'tat', 'backlinksAllowed', 'linkPlacement'],
+    3: ['name', 'niche', 'countryLang', 'authority', 'spam', 'price', 'priceWithContent', 'trend', 'wordLimit', 'tat', 'backlinksAllowed', 'linkPlacement', 'cart'],
     4: allColumns.map((c) => c.key),
   }
 
@@ -929,7 +932,7 @@ export default function CompactFilterPage() {
           <div>
             <div className="flex items-center justify-center">
               {site.additional.availability ? (
-                <div className="w-2 h-2 bg-green-500 rounded-full" title="Available" />
+                <div className="w-2 h-2 bg-[#FDC800] rounded-full" title="Available" />
               ) : (
                 <div className="text-xs text-red-400">Unavailable</div>
               )}
@@ -944,6 +947,27 @@ export default function CompactFilterPage() {
                 <span className="text-gray-400 dark:text-gray-500">Last Published:</span> {site.quality.lastPublished}
               </div>
             ) : null}
+          </div>
+        )
+      case 'cart':
+        return (
+          <div className="flex items-center justify-center">
+            <Button
+              size="sm"
+              variant={isItemInCart(site.id) ? "default" : "outline"}
+              onClick={(e) => {
+                e.stopPropagation()
+                addItem(site)
+              }}
+              className={cn(
+                "h-8 px-3 text-xs font-medium transition-all duration-200",
+                isItemInCart(site.id) 
+                  ? "bg-[#FDC800] hover:bg-[#F2C86C] text-black border-[#FDC800]" 
+                  : "border-[#F2C86C] text-[#986220] hover:border-[#FDC800] hover:bg-[#FEFCE9] hover:text-[#986220]"
+              )}
+            >
+              {isItemInCart(site.id) ? "In Cart" : "Add to Cart"}
+            </Button>
           </div>
         )
       default:

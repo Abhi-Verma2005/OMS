@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/auth/user-menu"
 import { MobileNav } from "@/components/navigation/mobile-nav"
-import { FileStack, Home, BarChart3, Shield, Filter } from "lucide-react"
+import { FileStack, Home, BarChart3, Shield, Filter, ShoppingCart } from "lucide-react"
 import { useSession } from "next-auth/react"
+import { useCart } from "@/contexts/cart-context"
 
 interface NavItem {
   name: string
@@ -48,8 +49,10 @@ const navigation: NavItem[] = [
 export function MainNav() {
   const pathname = usePathname()
   const { data: session } = useSession()
+  const { getTotalItems } = useCart()
   const userRole = (session?.user as any)?.role
   const isAuthenticated = !!session
+  const cartItemCount = getTotalItems()
 
   const filteredNavigation = navigation.filter((item) => {
     if (item.requiresAuth && !isAuthenticated) return false
@@ -99,6 +102,18 @@ export function MainNav() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-2">
+            {isAuthenticated && (
+              <Link href="/cart">
+                <Button variant="ghost" size="sm" className="relative">
+                  <ShoppingCart className="w-4 h-4" />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartItemCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
             {isAuthenticated && <MobileNav />}
             <UserMenu />
             <ThemeToggle />

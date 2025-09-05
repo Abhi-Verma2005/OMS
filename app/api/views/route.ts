@@ -8,13 +8,20 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const views = await (prisma as any).savedView.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, filters: true, createdAt: true, updatedAt: true },
-  })
+  try {
+    const views = await prisma.savedView.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      
+      select: { id: true, name: true, filters: true, createdAt: true, updatedAt: true },
+    })
 
-  return NextResponse.json({ views })
+    return NextResponse.json({ views })
+  } catch (error) {
+    console.error('Database error in views API:', error)
+    // Return empty array if database is unavailable
+    return NextResponse.json({ views: [] })
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -40,15 +47,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Filters object is required" }, { status: 400 })
   }
 
-  // Upsert by unique (userId, name)
-  const saved = await prisma.savedView.upsert({
-    where: { userId_name: { userId: session.user.id, name } },
-    update: { filters },
-    create: { userId: session.user.id, name, filters },
-    select: { id: true, name: true, filters: true, createdAt: true, updatedAt: true },
-  })
+  try {
+    // Upsert by unique (userId, name)
+    const saved = await prisma.savedView.upsert({
+      where: { userId_name: { userId: session.user.id, name } },
+      update: { filters },
+      create: { userId: session.user.id, name, filters },
+      select: { id: true, name: true, filters: true, createdAt: true, updatedAt: true },
+    })
 
-  return NextResponse.json({ view: saved }, { status: 201 })
+    return NextResponse.json({ view: saved }, { status: 201 })
+  } catch (error) {
+    console.error('Database error in views POST API:', error)
+    return NextResponse.json({ error: "Failed to save view" }, { status: 500 })
+  }
 }
 
 

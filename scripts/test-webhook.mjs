@@ -1,88 +1,115 @@
-const API_BASE_URL = 'https://agents.outreachdeal.com/webhook/dummy-data'
+#!/usr/bin/env node
 
-async function postJson(url, payload) {
-  console.log('[Payload]', JSON.stringify(payload, null, 2))
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'User-Agent': 'OMS-Test-Client/1.0',
-    },
-    body: JSON.stringify(payload),
-  })
+/**
+ * Test script to verify webhook processing
+ */
 
-  const status = `${res.status} ${res.statusText}`
-  const headers = Object.fromEntries(res.headers.entries())
-  const raw = await res.text()
-  let json
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function testWebhook() {
+  console.log('🧪 Testing Webhook Processing...\n')
+
   try {
-    json = raw ? JSON.parse(raw) : null
-  } catch (e) {
-    json = null
-  }
-  return { ok: res.ok, status, headers, raw, json }
-}
+    // Find a recent PENDING order
+    const pendingOrder = await prisma.order.findFirst({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+      include: { items: true, transactions: true }
+    })
 
-async function main() {
-  console.log('Testing webhook without filters...')
-  let result = await postJson(API_BASE_URL, { limit: 5, domainAuthority: { min: 50, max: 75 } })
-  console.log('Status:', result.status)
-  console.log('Response headers:', result.headers)
-  console.log('Parsed JSON:', result.json ? '[ok]' : '[none]')
-  if (!result.json) {
-    console.log('Raw body:', result.raw)
-  } else {
-    if (Array.isArray(result.json)) {
-      console.log('Array length:', result.json.length)
-      if (result.json.length > 0) {
-        console.log('First item:')
-        console.dir(result.json[0], { depth: null })
+    if (!pendingOrder) {
+      console.log('❌ No pending orders found')
+      
+      // Show recent orders
+      const recentOrders = await prisma.order.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+        include: { items: true, transactions: true }
+      })
+      
+      console.log('\nRecent orders:')
+      recentOrders.forEach(order => {
+        console.log(`- Order ${order.id}: Status=${order.status}, Amount=${order.totalAmount}`)
+        if (order.transactions.length > 0) {
+          order.transactions.forEach(tx => {
+            console.log(`  Transaction: ${tx.status} (${tx.provider}) - ${tx.reference}`)
+          })
+        }
+      })
+      return
+    }
+
+    console.log('✅ Found pending order:', pendingOrder.id)
+    console.log('   - Status:', pendingOrder.status)
+    console.log('   - Amount:', pendingOrder.totalAmount)
+    console.log('   - User ID:', pendingOrder.userId)
+
+    // Test webhook call (without signature verification for testing)
+    console.log('\n🔗 Testing webhook call...')
+    
+    const webhookPayload = {
+      id: 'evt_test_webhook',
+      object: 'event',
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          id: 'pi_test_payment_intent',
+          amount: pendingOrder.totalAmount,
+          currency: 'usd',
+          metadata: {
+            userId: pendingOrder.userId,
+            items: JSON.stringify(pendingOrder.items.map(item => ({
+              id: item.siteId,
+              name: item.siteName,
+              price: item.priceCents / 100,
+              quantity: item.quantity
+            }))),
+            orderType: 'publisher_services',
+            orderId: pendingOrder.id
+          }
+        }
       }
-    } else if (result.json && typeof result.json === 'object') {
-      console.log('Top-level keys:', Object.keys(result.json))
-      console.dir(result.json, { depth: null })
-    } else {
-      console.log('Value:', result.json)
     }
-  }
 
-  console.log('\nTesting webhook with filters (exact raw JSON from curl)...')
-  const rawJsonFromCurl = '{"filters": "\\"domainAuthority\\" > 50 AND \\"pageAuthority\\" > 75", "limit": 5}'
-  const res2 = await fetch(API_BASE_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'User-Agent': 'OMS-Test-Client/1.0',
-    },
-    body: rawJsonFromCurl,
-  })
-  const status2 = `${res2.status} ${res2.statusText}`
-  const headers2 = Object.fromEntries(res2.headers.entries())
-  const raw2 = await res2.text()
-  let json2
-  try { json2 = raw2 ? JSON.parse(raw2) : null } catch { json2 = null }
-  result = { ok: res2.ok, status: status2, headers: headers2, raw: raw2, json: json2 }
-  console.log('Status:', result.status)
-  console.log('Response headers:', result.headers)
-  console.log('Parsed JSON:', result.json ? '[ok]' : '[none]')
-  if (result.json) {
-    if (Array.isArray(result.json)) {
-      console.log('Items:', result.json.length)
-    } else if (Array.isArray(result.json?.data)) {
-      console.log('Items:', result.json.data.length)
-    } else {
-      console.log('Top-level keys:', Object.keys(result.json))
+    console.log('Webhook payload:', JSON.stringify(webhookPayload, null, 2))
+
+    // Make webhook call
+    const response = await fetch('http://localhost:3000/api/webhooks/stripe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'stripe-signature': 'test-signature' // This will fail signature verification
+      },
+      body: JSON.stringify(webhookPayload)
+    })
+
+    console.log('Webhook response status:', response.status)
+    const responseText = await response.text()
+    console.log('Webhook response:', responseText)
+
+    // Check if order status changed
+    const updatedOrder = await prisma.order.findUnique({
+      where: { id: pendingOrder.id },
+      include: { items: true, transactions: true }
+    })
+
+    console.log('\n📊 Order status after webhook:')
+    console.log('   - Status:', updatedOrder?.status)
+    console.log('   - Transactions:', updatedOrder?.transactions.length)
+    if (updatedOrder?.transactions.length > 0) {
+      updatedOrder.transactions.forEach(tx => {
+        console.log(`     Transaction: ${tx.status} (${tx.provider}) - ${tx.reference}`)
+      })
     }
-  } else {
-    console.log('Raw body:', result.raw)
+
+  } catch (error) {
+    console.error('❌ Test failed:', error)
+  } finally {
+    await prisma.$disconnect()
   }
 }
 
-main().catch((e) => {
-  console.error('Test failed:', e)
-  process.exitCode = 1
-})
-
-
+// Run the test
+testWebhook()

@@ -22,16 +22,14 @@ async function createTestUser() {
       data: {
         name: 'Test User',
         email: 'test@example.com',
-        password: hashedPassword,
-        role: 'USER'
+        password: hashedPassword
       }
     })
 
     console.log('Test user created successfully:', {
       id: user.id,
       name: user.name,
-      email: user.email,
-      role: user.role
+      email: user.email
     })
 
     console.log('\nYou can now sign in with:')
