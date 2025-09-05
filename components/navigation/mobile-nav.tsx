@@ -70,7 +70,7 @@ export function MobileNav() {
           {/* User Info */}
           {isAuthenticated && (
             <div className="flex items-center space-x-3 pb-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
                 <User className="h-4 w-4 text-gray-900" />
               </div>
               <div>
@@ -95,7 +95,7 @@ export function MobileNav() {
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-yellow-500 text-gray-900"
+                      ? "bg-yellow-400 text-gray-900"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
                   )}
                   onClick={() => setOpen(false)}

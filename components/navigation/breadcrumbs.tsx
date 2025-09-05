@@ -53,24 +53,24 @@ export function Breadcrumbs() {
   })
 
   return (
-    <nav className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400 mb-6">
+    <nav className="flex items-center space-x-2 text-sm">
       {breadcrumbs.map((item, index) => (
-        <div key={index} className="flex items-center space-x-1">
+        <div key={index} className="flex items-center space-x-2">
           {index > 0 && (
-            <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
           )}
           {item.href ? (
             <Link
               href={item.href}
-              className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
             >
-              {item.icon && <item.icon className="w-4 h-4" />}
-              <span>{item.label}</span>
+              {item.icon && <item.icon className="w-4 h-4 flex-shrink-0" />}
+              <span className="whitespace-nowrap">{item.label}</span>
             </Link>
           ) : (
-            <span className="flex items-center gap-1 text-gray-900 dark:text-white font-medium">
-              {item.icon && <item.icon className="w-4 h-4" />}
-              {item.label}
+            <span className="flex items-center gap-1.5 px-2 py-1 text-gray-900 dark:text-white font-semibold">
+              {item.icon && <item.icon className="w-4 h-4 flex-shrink-0" />}
+              <span className="whitespace-nowrap">{item.label}</span>
             </span>
           )}
         </div>

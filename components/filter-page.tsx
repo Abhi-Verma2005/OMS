@@ -34,7 +34,7 @@ import {
   EyeOff,
   Loader2
 } from "lucide-react"
-import { Site, fetchSitesWithFilters, transformAPISiteToSite, APIFilters } from "@/lib/sample-sites"
+import { Site, fetchSitesWithFilters, transformAPISiteToSite, APIFilters, fetchCategoryRecommendations, CategoryRecommendation } from "@/lib/sample-sites"
 
 // Site type is now imported from lib/sample-sites
 
@@ -181,10 +181,10 @@ const defaultVisibleColumns: ColumnKey[] = ['name', 'niche', 'countryLang', 'aut
 const styles = {
   surface: "bg-white dark:bg-gray-950 text-gray-900 dark:text-white",
   panel: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800",
-  field: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 border border-gray-300 dark:border-gray-700 focus-visible:ring-2 focus-visible:ring-yellow-500",
+  field: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 border border-gray-300 dark:border-gray-700 focus-visible:ring-2 focus-visible:ring-yellow-400",
   select: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700",
   menu: "bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700",
-  chip: "bg-yellow-500 text-gray-900",
+  chip: "bg-yellow-400 text-gray-900",
 }
 
 type FilterPebble = {
@@ -234,6 +234,10 @@ export default function CompactFilterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastFetched, setLastFetched] = useState<Date | null>(null)
+  const [views, setViews] = useState<Array<{ id: string; name: string; filters: any }>>([])
+  const [viewName, setViewName] = useState<string>("")
+  const [savingView, setSavingView] = useState<boolean>(false)
+  const [applyingViewId, setApplyingViewId] = useState<string>("")
   type RowLevel = 1 | 2 | 3 | 4 | 'custom'
   const [rowLevel, setRowLevel] = useState<RowLevel>(2)
   const [allCountries, setAllCountries] = useState<string[]>(COUNTRY_NAMES)
@@ -241,6 +245,9 @@ export default function CompactFilterPage() {
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [nicheSearch, setNicheSearch] = useState<string>("")
   const [showNicheSuggestions, setShowNicheSuggestions] = useState<boolean>(false)
+  const [categoryRecommendations, setCategoryRecommendations] = useState<CategoryRecommendation[]>([])
+  const [loadingCategories, setLoadingCategories] = useState<boolean>(false)
+  const [categoryError, setCategoryError] = useState<string | null>(null)
   
 
   // Row presets: progressively reveal more data
@@ -287,6 +294,7 @@ export default function CompactFilterPage() {
     if (f.backlinkNature) apiFilters.linkAttribute = f.backlinkNature
     if (f.availability !== undefined) apiFilters.availability = f.availability
     if (f.remarkIncludes) apiFilters.websiteRemark = f.remarkIncludes
+    if (searchQuery.trim()) apiFilters.website = searchQuery.trim()
     
     return apiFilters
   }
@@ -335,6 +343,48 @@ export default function CompactFilterPage() {
     fetchData()
   }, [])
 
+  // Load saved views
+  useEffect(() => {
+    const loadViews = async () => {
+      try {
+        const res = await fetch('/api/views', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        setViews(data.views ?? [])
+      } catch (e) {
+        // ignore silently
+      }
+    }
+    loadViews()
+  }, [])
+
+  // Debounced category recommendations fetch
+  useEffect(() => {
+    if (!nicheSearch || nicheSearch.trim().length < 2) {
+      setCategoryRecommendations([])
+      setCategoryError(null)
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setLoadingCategories(true)
+      setCategoryError(null)
+      
+      try {
+        const recommendations = await fetchCategoryRecommendations(nicheSearch)
+        setCategoryRecommendations(recommendations)
+      } catch (error) {
+        console.error('Error fetching category recommendations:', error)
+        setCategoryError(error instanceof Error ? error.message : 'Failed to fetch recommendations')
+        setCategoryRecommendations([])
+      } finally {
+        setLoadingCategories(false)
+      }
+    }, 300) // 300ms delay for category search
+
+    return () => clearTimeout(timeoutId)
+  }, [nicheSearch])
+
   // Debounced filter update to avoid too many API calls
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -344,6 +394,16 @@ export default function CompactFilterPage() {
 
     return () => clearTimeout(timeoutId)
   }, [filters])
+
+  // Debounced search query update to query API as user types
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const apiFilters = convertFiltersToAPI(filters)
+      fetchData(apiFilters)
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
 
   const results = useMemo(() => {
     const filtered = applyFilters(sites, filters)
@@ -472,6 +532,54 @@ export default function CompactFilterPage() {
     if (!loading) {
       setFilters(defaultFilters)
     }
+  }
+
+  // Save current filters as a view
+  const saveCurrentView = async () => {
+    if (savingView) return
+    const name = viewName.trim()
+    if (!name) return
+    setSavingView(true)
+    try {
+      const res = await fetch('/api/views', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, filters }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        // refresh list
+        setViews((prev) => {
+          const others = prev.filter(v => !(v.name === data.view.name))
+          return [data.view, ...others]
+        })
+        setViewName("")
+      }
+    } finally {
+      setSavingView(false)
+    }
+  }
+
+  // Apply a saved view by id
+  const applyViewById = (id: string) => {
+    const v = views.find(v => v.id === id)
+    if (!v) return
+    setApplyingViewId(id)
+    // Only apply known filter keys; ignore extras
+    const next: Filters = { ...defaultFilters, ...v.filters }
+    setFilters(next)
+    setTimeout(() => setApplyingViewId(""), 300)
+  }
+
+  // Delete a saved view
+  const deleteViewById = async (id: string) => {
+    try {
+      const res = await fetch(`/api/views/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setViews(prev => prev.filter(v => v.id !== id))
+        if (applyingViewId === id) setApplyingViewId("")
+      }
+    } catch {}
   }
 
   const toggleColumn = (columnKey: ColumnKey) => {
@@ -607,7 +715,7 @@ export default function CompactFilterPage() {
                   <Badge
                     key={n}
                     variant="secondary"
-                    className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-yellow-500/15 text-yellow-800 border border-yellow-400/30 dark:bg-yellow-400/10 dark:text-yellow-300 dark:border-yellow-400/20"
+                    className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-yellow-400/15 text-yellow-700 border border-yellow-400/30 dark:bg-yellow-400/10 dark:text-yellow-300 dark:border-yellow-400/20"
                   >
                     {n}
                   </Badge>
@@ -1262,31 +1370,48 @@ export default function CompactFilterPage() {
               />
               {showNicheSuggestions && nicheSearch && (
                 <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                  {COMMON_NICHES
-                    .filter(niche => niche.toLowerCase().includes(nicheSearch.toLowerCase()))
-                    .slice(0, 10)
-                    .map((niche) => (
+                  {loadingCategories ? (
+                    <div className="flex items-center justify-center px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Loading recommendations...
+                    </div>
+                  ) : categoryError ? (
+                    <div className="px-3 py-2 text-sm text-red-500 dark:text-red-400">
+                      Error: {categoryError}
+                    </div>
+                  ) : categoryRecommendations.length > 0 ? (
+                    categoryRecommendations.map((recommendation) => (
                       <button
-                        key={niche}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                        key={recommendation.category}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white flex items-center justify-between"
                         onClick={() => {
-                          setStr("niche", niche)
-                          setNicheSearch(niche)
+                          setStr("niche", recommendation.category)
+                          setNicheSearch(recommendation.category)
                           setShowNicheSuggestions(false)
                         }}
                       >
-                        {niche}
+                        <span>{recommendation.category}</span>
+                        {recommendation.count && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                            ({recommendation.count})
+                          </span>
+                        )}
                       </button>
                     ))
-                  }
-                  {COMMON_NICHES.filter(niche => niche.toLowerCase().includes(nicheSearch.toLowerCase())).length === 0 && (
-                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No suggestions found</div>
+                  ) : nicheSearch.length >= 2 ? (
+                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                      No recommendations found for "{nicheSearch}"
+                    </div>
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                      Type at least 2 characters to see recommendations
+                    </div>
                   )}
                 </div>
               )}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              Start typing to see niche suggestions
+              Start typing to see AI-powered niche recommendations
             </div>
           </div>
         )
@@ -1450,7 +1575,7 @@ export default function CompactFilterPage() {
               checked={filters.availability ?? false}
               onCheckedChange={(v) => !loading && setFilters((f) => ({ ...f, availability: v }))}
               disabled={loading}
-              className="data-[state=checked]:bg-yellow-500"
+              className="data-[state=checked]:bg-yellow-400"
             />
           </div>
         )
@@ -1496,10 +1621,57 @@ export default function CompactFilterPage() {
         <Card className={cn(styles.panel, "p-4")}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-yellow-500" />
+              <Filter className="w-5 h-5 text-yellow-400" />
               <h2 className="text-lg font-semibold">Filters</h2>
             </div>
             <div className="flex items-center gap-2">
+              {/* Saved Views Controls */}
+              <div className="hidden md:flex items-center gap-2">
+                <Select
+                  value={applyingViewId}
+                  onValueChange={(val) => applyViewById(val)}
+                  disabled={loading}
+                >
+                  <SelectTrigger className={cn(styles.select, "h-7 w-48 text-xs")}> 
+                    <SelectValue placeholder={views.length ? "Apply saved view" : "No saved views"} />
+                  </SelectTrigger>
+                  <SelectContent className={styles.menu}>
+                    {views.map(v => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {applyingViewId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => deleteViewById(applyingViewId)}
+                    disabled={loading}
+                  >
+                    Delete
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <Input
+                  className={cn(styles.field, "h-7 text-xs w-36")}
+                  placeholder="Save as view..."
+                  value={viewName}
+                  onChange={(e) => setViewName(e.target.value)}
+                  disabled={loading || savingView}
+                />
+                <Button 
+                  variant="secondary" 
+                  onClick={saveCurrentView} 
+                  disabled={loading || savingView || !viewName.trim()}
+                  className="h-7 text-xs"
+                >
+                  {savingView ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+                </Button>
+              </div>
               <Button 
                 variant="outline" 
                 onClick={() => fetchData(convertFiltersToAPI(filters))} 
@@ -1538,7 +1710,7 @@ export default function CompactFilterPage() {
                         className={cn(
                           "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border transition-all duration-200 hover:scale-105",
                           hasValue 
-                            ? "bg-yellow-500 text-gray-900 border-yellow-500 shadow-md" 
+                            ? "bg-yellow-400 text-gray-900 border-yellow-400 shadow-md" 
                             : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600",
                           loading && "opacity-50 cursor-not-allowed"
                         )}
@@ -1601,7 +1773,7 @@ export default function CompactFilterPage() {
                   key={chip.label}
                   onClick={() => openFilterModal(chip.key)}
                   disabled={loading}
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs bg-yellow-500 text-gray-900 border border-yellow-500 hover:bg-yellow-400 transition-all duration-200 hover:scale-105 cursor-pointer group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs bg-yellow-400 text-gray-900 border border-yellow-400 hover:bg-yellow-300 transition-all duration-200 hover:scale-105 cursor-pointer group shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   title={`Click to edit ${chip.label}`}
                 >
                   <span className="font-medium">{chip.label}</span>
@@ -1764,7 +1936,7 @@ export default function CompactFilterPage() {
                                   checked={visibleColumns.includes(column.key)}
                                   onCheckedChange={() => toggleColumn(column.key)}
                                   disabled={loading}
-                                  className="data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500 disabled:opacity-50"
+                                  className="data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400 disabled:opacity-50"
                                 />
                                 <label 
                                   htmlFor={column.key}
@@ -1954,7 +2126,7 @@ function SiteDetails({ site }: { site: Site }) {
                   <Badge
                     key={n}
                     variant="secondary"
-                    className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-yellow-500/15 text-yellow-800 border border-yellow-400/30 dark:bg-yellow-400/10 dark:text-yellow-300 dark:border-yellow-400/20"
+                    className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-yellow-400/15 text-yellow-700 border border-yellow-400/30 dark:bg-yellow-400/10 dark:text-yellow-300 dark:border-yellow-400/20"
                   >
                     {n}
                   </Badge>
@@ -2002,6 +2174,22 @@ function SiteDetails({ site }: { site: Site }) {
           <InfoItem label="Availability" value={site.additional.availability ? "Available" : "Not Available"} />
           <InfoItem label="Remark" value={site.quality.remark || "N/A"} />
         </InfoCard>
+      </div>
+      <div className="flex items-center justify-end">
+        <Button
+          className="bg-yellow-400 text-gray-900 hover:bg-yellow-300"
+          onClick={() => {
+            const params = new URLSearchParams()
+            params.set('siteId', site.id)
+            params.set('siteName', site.name)
+            params.set('priceCents', String(Math.round(site.publishing.price * 100)))
+            // if user toggles with-content pricing elsewhere, we can forward it; default 0
+            // params.set('withContent', '1')
+            window.location.href = `/checkout?${params.toString()}`
+          }}
+        >
+          Order This Site
+        </Button>
       </div>
     </div>
   )

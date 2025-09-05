@@ -46,7 +46,7 @@ export function PageLayout({
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Mobile Header */}
-          <header className="md:hidden flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex-shrink-0">
+          <header className="md:hidden flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex-shrink-0 shadow-sm">
             <MobileSidebar />
             <div className="flex items-center gap-2">
               <span className="text-lg font-semibold text-gray-900 dark:text-white">OMS</span>
@@ -55,17 +55,22 @@ export function PageLayout({
           </header>
           
           {/* Desktop Header with Sidebar Toggle */}
-          <header className="hidden md:flex h-16 items-center justify-between px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex-shrink-0">
-            <div className="flex items-center gap-4">
+          <header className="hidden md:flex h-16 items-center px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex-shrink-0 shadow-sm">
+            <div className="flex items-center gap-3 w-full">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleSidebar}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200 flex-shrink-0"
               >
                 {isSidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
               </Button>
-              {showBreadcrumbs && <Breadcrumbs />}
+              <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+              {showBreadcrumbs && (
+                <div className="flex-1 min-w-0">
+                  <Breadcrumbs />
+                </div>
+              )}
             </div>
           </header>
           

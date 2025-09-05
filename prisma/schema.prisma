@@ -52,7 +52,6 @@ model User {
   emailVerified DateTime? @map("email_verified")
   image         String?
   password      String?   // For credentials authentication
-  role          UserRole  @default(USER)
   accounts      Account[]
   sessions      Session[]
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -65,6 +64,15 @@ model User {
   
   // WebAuthn/Passkeys
   authenticators Authenticator[]
+
+  // ✅ RBAC Relations - Users can have multiple roles
+  userRoles     UserRole[]
+
+  // Orders
+  orders        Order[]
+
+  // Saved Views
+  savedViews    SavedView[]
 
   @@map("users")
 }
@@ -98,8 +106,157 @@ model Authenticator {
   @@map("authenticators")
 }
 
-enum UserRole {
-  USER
-  ADMIN
-  MODERATOR
+// =====================================================
+// RBAC (Role-Based Access Control) Models
+// =====================================================
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "admin", "user", "moderator", "editor"
+  displayName String   @map("display_name") // e.g., "Administrator", "Regular User"
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system") // System roles cannot be deleted
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "users.create", "posts.delete", "admin.dashboard.view"
+  displayName String   @map("display_name") // e.g., "Create Users", "Delete Posts"
+  description String?
+  resource    String   // e.g., "users", "posts", "dashboard", "roles"
+  action      String   // e.g., "create", "read", "update", "delete", "view"
+  isSystem    Boolean  @default(false) @map("is_system") // System permissions cannot be deleted
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  roleId    String   @map("role_id")
+  assignedBy String? @map("assigned_by") // User ID of who assigned this role
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  expiresAt  DateTime? @map("expires_at") // Optional role expiration
+  isActive   Boolean  @default(true) @map("is_active")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  id           String   @id @default(cuid())
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  grantedBy    String?  @map("granted_by") // User ID of who granted this permission
+  grantedAt    DateTime @default(now()) @map("granted_at")
+
+  // Relations
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// =====================================================
+// Orders and Transactions
+// =====================================================
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  userId       String      @map("user_id")
+  totalAmount  Int         @map("total_amount") // amount in cents
+  currency     String      @default("USD")
+  status       OrderStatus @default(PENDING)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  OrderItem[]
+  transactions Transaction[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String  @id @default(cuid())
+  orderId      String  @map("order_id")
+  siteId       String  @map("site_id") // external site id
+  siteName     String  @map("site_name")
+  priceCents   Int     @map("price_cents")
+  withContent  Boolean @map("with_content")
+  quantity     Int     @default(1)
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+enum TransactionStatus {
+  INITIATED
+  SUCCESS
+  FAILED
+}
+
+model Transaction {
+  id        String            @id @default(cuid())
+  orderId   String            @map("order_id")
+  amount    Int               // in cents
+  currency  String            @default("USD")
+  status    TransactionStatus @default(INITIATED)
+  provider  String?
+  reference String?
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+// =====================================================
+// Saved Views for Filters
+// =====================================================
+
+model SavedView {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  filters     Json
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@map("saved_views")
 }

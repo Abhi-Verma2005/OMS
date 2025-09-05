@@ -39,7 +39,7 @@ export default function SiteDetails({ site }: { site: Site }) {
         {site.additional.availability ? (
           <Badge className="bg-green-600/15 text-green-700 dark:text-green-400">Available</Badge>
         ) : (
-          <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400">Unavailable</Badge>
+          <Badge className="bg-amber-400/15 text-amber-600 dark:text-amber-300">Unavailable</Badge>
         )}
       </div>
 

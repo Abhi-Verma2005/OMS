@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { generateRegistrationOptions } from "@simplewebauthn/server"
-import { db } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing authenticators for the user
-    const existingAuthenticators = await db.authenticator.findMany({
+    const existingAuthenticators = await prisma.authenticator.findMany({
       where: { userId: session.user.id },
     })
 

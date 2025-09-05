@@ -4,13 +4,13 @@ import Google from "next-auth/providers/google"
 import Discord from "next-auth/providers/discord"
 import Resend from "next-auth/providers/resend"
 import Credentials from "next-auth/providers/credentials"
-import { db } from "./db"
-import bcrypt from "bcryptjs"
+import { prisma } from "./db"
+import * as bcrypt from "bcryptjs"
 import type { NextAuthConfig } from "next-auth"
 import type { UserRole } from "@prisma/client"
 
 export const config = {
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(prisma),
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
@@ -35,7 +35,7 @@ export const config = {
           return null
         }
 
-        const user = await db.user.findUnique({
+        const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
         })
 
@@ -55,15 +55,44 @@ export const config = {
           email: user.email,
           name: user.name,
           image: user.image,
-          role: user.role,
         }
       },
     }),
   ],
   callbacks: {
-    jwt: ({ token, user }) => {
+    jwt: async ({ token, user }) => {
       if (user) {
-        token.role = (user as any).role
+        // Fetch user roles when user first signs in
+        const userWithRoles = await (prisma as any).user.findUnique({
+          where: { id: user.id },
+          include: {
+            userRoles: {
+              where: { isActive: true },
+              include: {
+                role: {
+                  include: {
+                    rolePermissions: {
+                      include: {
+                        permission: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        if (userWithRoles) {
+          const roles = userWithRoles.userRoles.map((ur: any) => ur.role.name);
+          const permissions = userWithRoles.userRoles.flatMap((ur: any) => 
+            ur.role.rolePermissions.map((rp: any) => rp.permission.name)
+          );
+          
+          token.roles = roles;
+          token.permissions = permissions;
+          token.isAdmin = roles.includes('admin');
+        }
       }
       return token
     },
@@ -72,7 +101,9 @@ export const config = {
       user: {
         ...session.user,
         id: token.sub!,
-        role: token.role as UserRole,
+        roles: token.roles as string[],
+        permissions: token.permissions as string[],
+        isAdmin: token.isAdmin as boolean,
       },
     }),
     authorized: ({ auth, request: { nextUrl } }) => {
@@ -81,7 +112,7 @@ export const config = {
       const isOnAdmin = nextUrl.pathname.startsWith('/admin')
       
       if (isOnAdmin) {
-        if (isLoggedIn && (auth.user as any)?.role === 'ADMIN') return true
+        if (isLoggedIn && (auth.user as any)?.isAdmin) return true
         return false // Redirect unauthenticated users to login page
       }
       

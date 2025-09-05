@@ -8,18 +8,21 @@
     "lint": "next lint",
     "start": "next start",
     "test:webhook": "node scripts/test-webhook.mjs",
+    "test:api": "node scripts/test-api.mjs",
     "postinstall": "prisma generate",
     "setup": "node scripts/setup-prisma.mjs",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "assign-admin": "node scripts/assign-admin-role.mjs"
   },
   "dependencies": {
     "@auth/core": "^0.40.0",
     "@auth/prisma-adapter": "^2.10.0",
     "@hookform/resolvers": "^3.10.0",
-    "@prisma/client": "^6.15.0",
+    "@prisma/client": "6.15.0",
     "@radix-ui/react-accordion": "latest",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",
@@ -94,6 +97,7 @@
     "bcryptjs": "^3.0.2",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
+    "tsx": "^4.19.2",
     "tw-animate-css": "1.3.3",
     "typescript": "^5"
   }

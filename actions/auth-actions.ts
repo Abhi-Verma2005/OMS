@@ -3,7 +3,7 @@
 import { auth, signIn, signOut } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { z } from "zod"
-import { db } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
 
 const signInSchema = z.object({
@@ -39,7 +39,7 @@ export async function signUpAction(data: {
 
   try {
     // Check if user already exists
-    const existingUser = await db.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email },
     })
 
@@ -53,7 +53,7 @@ export async function signUpAction(data: {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create the user
-    await db.user.create({
+    await prisma.user.create({
       data: {
         name,
         email,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { db } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { verifyTOTP } from "@/lib/mfa-utils"
 
 export async function POST(request: NextRequest) {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's MFA secret from database
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { mfaSecret: true, mfaEnabled: true },
     })
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Enable MFA for the user
-    await db.user.update({
+    await prisma.user.update({
       where: { id: session.user.id },
       data: { mfaEnabled: true },
     })

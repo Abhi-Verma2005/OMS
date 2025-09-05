@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyRegistrationResponse } from "@simplewebauthn/server"
-import { db } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const { credentialID, credentialPublicKey, counter } = verification.registrationInfo
 
     // Save the authenticator to the database
-    await db.authenticator.create({
+    await prisma.authenticator.create({
       data: {
         credentialID: Buffer.from(credentialID).toString("base64url"),
         userId: session.user.id,

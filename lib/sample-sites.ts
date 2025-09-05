@@ -125,6 +125,8 @@ export interface APIFilters {
   webCountry?: string
   turnAroundTime?: string
   websiteRemark?: string
+  // Optional: server-side filtering by website name (if supported by API)
+  website?: string
   limit?: number
 }
 
@@ -137,6 +139,99 @@ export interface APIResponse {
 
 // API functions
 const API_BASE_URL = 'https://agents.outreachdeal.com/webhook/dummy-data'
+const CATEGORIES_API_URL = 'https://agents.outreachdeal.com/webhook/fetch-categories'
+
+// Category recommendations API
+export interface CategoryRecommendation {
+  category: string
+  count?: number
+  relevance?: number
+}
+
+export async function fetchCategoryRecommendations(query: string): Promise<CategoryRecommendation[]> {
+  if (!query || query.trim().length < 2) {
+    return []
+  }
+
+  try {
+    console.log('Fetching category recommendations for:', query)
+    
+    const response = await fetch(CATEGORIES_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        query: query.trim(),
+        limit: 10
+      }),
+    })
+
+    console.log('Categories API response status:', response.status, response.statusText)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Categories API Error Response:', errorText)
+      
+      if (response.status === 404) {
+        throw new Error(`Categories API endpoint not found: ${CATEGORIES_API_URL}`)
+      }
+      
+      throw new Error(`Categories API request failed: ${response.status} ${response.statusText}`)
+    }
+
+    const responseText = await response.text()
+    if (!responseText || responseText.trim() === '') {
+      console.warn('Categories API returned empty body.')
+      return []
+    }
+
+    let data: any
+    try {
+      data = JSON.parse(responseText)
+    } catch (e) {
+      console.error('Failed to parse categories API response as JSON. Raw response:', responseText)
+      throw new Error('Unexpected categories API response: not valid JSON')
+    }
+
+    console.log('Categories API Response data:', data)
+    
+    // Handle different possible response formats
+    if (Array.isArray(data)) {
+      return data.map((item: any) => ({
+        category: item.category || item.name || item,
+        count: item.count,
+        relevance: item.relevance
+      }))
+    }
+    
+    // If it's an object with categories array
+    if (data && typeof data === 'object' && Array.isArray(data.categories)) {
+      return data.categories.map((item: any) => ({
+        category: item.category || item.name || item,
+        count: item.count,
+        relevance: item.relevance
+      }))
+    }
+    
+    // If it's a single category string
+    if (typeof data === 'string') {
+      return [{ category: data }]
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Error fetching category recommendations:', error)
+    
+    // If it's a network error, provide a helpful message
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error: Unable to connect to the categories API.')
+    }
+    
+    throw error
+  }
+}
 
 // Test function to debug webhook issues
 // testWebhookConnection removed (debug-only)
@@ -168,6 +263,7 @@ export async function fetchSitesWithFilters(filters: APIFilters = {}): Promise<A
       'webCountry',
       'turnAroundTime',
       'websiteRemark',
+      'website',
     ]
     for (const key of passthroughKeys) {
       const value = (filters as any)[key]

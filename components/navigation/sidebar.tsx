@@ -74,7 +74,7 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
       <div className="flex h-16 items-center border-b border-gray-200 dark:border-gray-800 px-6 flex-shrink-0">
         <div className="flex items-center gap-3 w-full">
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
               <FileStack className="w-4 h-4 text-gray-900" />
             </div>
             {!isCollapsed && (
@@ -108,7 +108,7 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
                   "w-full h-12 transition-all duration-200",
                   isCollapsed ? "justify-center px-2" : "justify-start gap-3",
                   isActive
-                    ? "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+                    ? "bg-yellow-400 hover:bg-yellow-300 text-gray-900"
                     : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
                 title={isCollapsed ? item.name : undefined}
@@ -161,7 +161,7 @@ export function MobileSidebar() {
           {/* Logo */}
           <div className="flex h-16 items-center border-b border-gray-200 dark:border-gray-800 px-6">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity" onClick={() => setOpen(false)}>
-              <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center">
                 <FileStack className="w-4 h-4 text-gray-900" />
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-white">
@@ -181,7 +181,7 @@ export function MobileSidebar() {
                     className={cn(
                       "w-full justify-start gap-3 h-12",
                       isActive
-                        ? "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+                        ? "bg-yellow-400 hover:bg-yellow-300 text-gray-900"
                         : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                     )}
                   >

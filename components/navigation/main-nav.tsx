@@ -64,7 +64,7 @@ export function MainNav() {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center">
                 <FileStack className="w-4 h-4 text-gray-900" />
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-white">
@@ -85,7 +85,7 @@ export function MainNav() {
                     className={cn(
                       "flex items-center gap-2",
                       isActive
-                        ? "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+                        ? "bg-yellow-400 hover:bg-yellow-300 text-gray-900"
                         : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                     )}
                   >
