@@ -154,7 +154,7 @@ export async function fetchCategoryRecommendations(query: string): Promise<Categ
   }
 
   try {
-    console.log('Fetching category recommendations for:', query)
+    // console.log('Fetching category recommendations for:', query)
     
     const response = await fetch(CATEGORIES_API_URL, {
       method: 'POST',
