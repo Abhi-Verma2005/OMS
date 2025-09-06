@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useCart } from '@/contexts/cart-context'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -26,6 +26,13 @@ export default function CartPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const { items } = state
+
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (session?.user && (session.user as any)?.isAdmin) {
+      router.push('/admin')
+    }
+  }, [session, router])
 
   const getTotalPrice = () => {
     return items.reduce((total, item) => {

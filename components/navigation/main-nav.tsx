@@ -17,6 +17,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   requiresAuth?: boolean
   adminOnly?: boolean
+  userOnly?: boolean // Only show to regular users, not admins
 }
 
 const navigation: NavItem[] = [
@@ -30,6 +31,7 @@ const navigation: NavItem[] = [
     href: "/data",
     icon: Filter,
     requiresAuth: true,
+    userOnly: true, // Only show to regular users, not admins
   },
   {
     name: "Dashboard",
@@ -51,12 +53,14 @@ export function MainNav() {
   const { data: session } = useSession()
   const { getTotalItems } = useCart()
   const userRole = (session?.user as any)?.role
+  const isAdmin = (session?.user as any)?.isAdmin
   const isAuthenticated = !!session
   const cartItemCount = getTotalItems()
 
   const filteredNavigation = navigation.filter((item) => {
     if (item.requiresAuth && !isAuthenticated) return false
-    if (item.adminOnly && userRole !== "ADMIN") return false
+    if (item.adminOnly && !isAdmin) return false
+    if (item.userOnly && isAdmin) return false // Hide user-only features from admins
     return true
   })
 
@@ -102,7 +106,7 @@ export function MainNav() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-2">
-            {isAuthenticated && (
+            {isAuthenticated && !isAdmin && (
               <Link href="/cart">
                 <Button variant="ghost" size="sm" className="relative">
                   <ShoppingCart className="w-4 h-4" />

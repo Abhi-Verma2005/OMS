@@ -12,6 +12,11 @@ export default async function DataPage() {
     redirect("/auth/signin")
   }
 
+  // Redirect admin users to admin dashboard
+  if (session?.user && (session.user as any)?.isAdmin) {
+    redirect("/admin")
+  }
+
   return (
     <PageLayout showBreadcrumbs={true} className="px-0">
       <Suspense fallback={

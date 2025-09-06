@@ -15,6 +15,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   requiresAuth?: boolean
   adminOnly?: boolean
+  userOnly?: boolean // Only show to regular users, not admins
 }
 
 const navigation: NavItem[] = [
@@ -28,6 +29,7 @@ const navigation: NavItem[] = [
     href: "/data",
     icon: Filter,
     requiresAuth: true,
+    userOnly: true, // Only show to regular users, not admins
   },
   {
     name: "Dashboard",
@@ -49,11 +51,13 @@ export function MobileNav() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const userRole = (session?.user as any)?.role
+  const isAdmin = (session?.user as any)?.isAdmin
   const isAuthenticated = !!session
 
   const filteredNavigation = navigation.filter((item) => {
     if (item.requiresAuth && !isAuthenticated) return false
-    if (item.adminOnly && userRole !== "ADMIN") return false
+    if (item.adminOnly && !isAdmin) return false
+    if (item.userOnly && isAdmin) return false // Hide user-only features from admins
     return true
   })
 

@@ -32,6 +32,11 @@ export default async function DashboardPage() {
     isAdmin = (session.user as any)?.isAdmin || false
   }
 
+  // Redirect admin users to admin dashboard
+  if (isAdmin) {
+    redirect("/admin")
+  }
+
   return (
     <PageLayout>
       <Suspense fallback={

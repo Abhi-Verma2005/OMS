@@ -105,10 +105,14 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>('')
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated or if admin user
   useEffect(() => {
     if (!session) {
       router.push('/auth/signin')
+      return
+    }
+    if (session?.user && (session.user as any)?.isAdmin) {
+      router.push('/admin')
       return
     }
   }, [session, router])

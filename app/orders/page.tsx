@@ -11,6 +11,11 @@ export default async function OrdersPage() {
     redirect("/auth/signin")
   }
 
+  // Redirect admin users to admin dashboard
+  if (session?.user && (session.user as any)?.isAdmin) {
+    redirect("/admin")
+  }
+
   return (
     <PageLayout>
       <Suspense fallback={
