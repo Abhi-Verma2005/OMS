@@ -16,6 +16,7 @@ const errorMessages = {
   AccessDenied: "Access denied. You do not have permission to sign in.",
   Verification: "The verification token has expired or has already been used.",
   OAuthAccountNotLinked: "An account with this email already exists. Please sign in with your password first, then you can link your Google account in your profile settings.",
+  OAuthCallback: "There was an issue with the OAuth callback. This might be due to browser security policies. Please try using a different browser or incognito mode.",
   Default: "An error occurred during authentication.",
 }
 
@@ -59,6 +60,29 @@ export default function AuthErrorPage({ searchParams }: ErrorPageProps) {
                   <Button variant="outline" asChild>
                     <Link href="/auth/signup">
                       Create New Account
+                    </Link>
+                  </Button>
+                </>
+              ) : error === 'OAuthCallback' ? (
+                <>
+                  <div className="text-sm text-muted-foreground mb-4 space-y-2">
+                    <p><strong>If you're seeing a "disallowed_useragent" error:</strong></p>
+                    <ul className="list-disc list-inside space-y-1 ml-4">
+                      <li>Try using a different browser (Chrome, Firefox, Safari)</li>
+                      <li>Use incognito/private browsing mode</li>
+                      <li>Clear your browser cache and cookies</li>
+                      <li>Disable browser extensions temporarily</li>
+                    </ul>
+                  </div>
+                  <Button asChild>
+                    <Link href="/auth/signin">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Try Again
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/auth/signin">
+                      Sign in with Email Instead
                     </Link>
                   </Button>
                 </>

@@ -5,6 +5,7 @@ import { SignUpForm } from "@/components/auth/sign-up-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { SignInButton } from "@/components/auth/sign-in-button"
+import { MobileSignInGuidance } from "@/components/auth/mobile-signin-guidance"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -33,8 +34,13 @@ export default async function SignUpPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Suspense fallback={<div>Loading...</div>}>
-              <SignInButton provider="google" />
-              <SignInButton provider="discord" />
+              <div className="space-y-4">
+                <SignInButton provider="google" />
+                <SignInButton provider="discord" />
+                
+                {/* Mobile-specific guidance */}
+                <MobileSignInGuidance />
+              </div>
             </Suspense>
             
             <div className="relative">

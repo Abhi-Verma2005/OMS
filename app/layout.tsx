@@ -14,6 +14,16 @@ export const metadata: Metadata = {
   title: "OMS - Publisher Directory",
   description: "Find and filter high-quality publishers for your campaigns",
   generator: "v0.app",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "black" },
+  ],
 }
 
 export default function RootLayout({

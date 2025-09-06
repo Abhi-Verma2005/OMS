@@ -5,6 +5,7 @@ import { SignInForm } from "@/components/auth/sign-in-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { SignInButton } from "@/components/auth/sign-in-button"
+import { MobileSignInGuidance } from "@/components/auth/mobile-signin-guidance"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Shield } from "lucide-react"
 import Link from "next/link"
@@ -47,8 +48,13 @@ export default async function SignInPage() {
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
             }>
-              <SignInButton provider="google" />
-              <SignInButton provider="discord" />
+              <div className="space-y-4">
+                <SignInButton provider="google" />
+                <SignInButton provider="discord" />
+                
+                {/* Mobile-specific guidance */}
+                <MobileSignInGuidance />
+              </div>
             </Suspense>
             
             <div className="relative">
