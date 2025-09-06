@@ -8,6 +8,7 @@ import { User, Mail, Calendar, Shield, Filter, ShoppingCart, Receipt, Clock, Che
 import Link from "next/link"
 import { PageLayout } from "@/components/layout/page-layout"
 import { DashboardContent } from "@/components/dashboard/dashboard-content"
+import { getUserWithRoles } from "@/lib/rbac"
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -17,7 +18,19 @@ export default async function DashboardPage() {
   }
 
   const user = session.user
-  const userRole = (user as any)?.role
+  
+  // Get user with roles to check for admin
+  let isAdmin = false
+  try {
+    const userWithRoles = await getUserWithRoles(session.user.id)
+    isAdmin = userWithRoles?.userRoles.some(ur => 
+      ur.role.name === 'admin' && ur.role.isActive
+    ) || false
+  } catch (error) {
+    console.error('Error fetching user roles:', error)
+    // Fallback: check if user has admin role in session
+    isAdmin = (session.user as any)?.isAdmin || false
+  }
 
   return (
     <PageLayout>
@@ -29,7 +42,7 @@ export default async function DashboardPage() {
           </div>
         </div>
       }>
-        <DashboardContent user={user} userRole={userRole} />
+        <DashboardContent user={user} userRole={isAdmin ? "ADMIN" : "USER"} />
       </Suspense>
     </PageLayout>
   )

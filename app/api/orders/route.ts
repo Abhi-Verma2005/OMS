@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-// Create an order
+// Create an order (requires explicit status - no PENDING orders allowed)
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -11,13 +11,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { items, currency = 'USD' } = body as {
+    const { items, currency = 'USD', status } = body as {
       items: Array<{ siteId: string; siteName: string; priceCents: number; withContent?: boolean; quantity?: number }>
       currency?: string
+      status: 'PAID' | 'FAILED' | 'CANCELLED' // Explicit status required
     }
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'No items provided' }, { status: 400 })
+    }
+
+    if (!status || !['PAID', 'FAILED', 'CANCELLED'].includes(status)) {
+      return NextResponse.json({ error: 'Valid status (PAID, FAILED, or CANCELLED) is required' }, { status: 400 })
     }
 
     const totalAmount = items.reduce((sum, it) => sum + (it.priceCents * (it.quantity ?? 1)), 0)
@@ -27,6 +32,7 @@ export async function POST(req: NextRequest) {
         userId: session.user.id,
         totalAmount,
         currency,
+        status, // Use explicit status instead of default PENDING
         items: {
           create: items.map((it) => ({
             siteId: it.siteId,
@@ -40,13 +46,13 @@ export async function POST(req: NextRequest) {
       include: { items: true }
     })
 
-    // Create a pending transaction record
+    // Create transaction record with appropriate status
     const tx = await prisma.transaction.create({
       data: {
         orderId: order.id,
         amount: order.totalAmount,
         currency: order.currency,
-        status: 'INITIATED',
+        status: status === 'PAID' ? 'SUCCESS' : 'FAILED',
         provider: 'offline',
       }
     })

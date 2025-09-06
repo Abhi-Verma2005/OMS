@@ -32,29 +32,43 @@ export const config = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log("Missing credentials")
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        })
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email as string },
+          })
 
-        if (!user || !(user as any).password) {
-          return null
-        }
+          if (!user) {
+            console.log("User not found:", credentials.email)
+            return null
+          }
 
-        // Verify the password
-        const isPasswordValid = await bcrypt.compare(credentials.password as string, (user as any).password)
-        
-        if (!isPasswordValid) {
+          if (!user.password) {
+            console.log("User has no password set")
+            return null
+          }
+
+          // Verify the password
+          const isPasswordValid = await bcrypt.compare(credentials.password as string, user.password)
+          
+          if (!isPasswordValid) {
+            console.log("Invalid password for user:", credentials.email)
+            return null
+          }
+          
+          console.log("Authentication successful for user:", user.email)
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+          }
+        } catch (error) {
+          console.error("Auth error:", error)
           return null
-        }
-        
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
         }
       },
     }),
@@ -62,36 +76,43 @@ export const config = {
   callbacks: {
     jwt: async ({ token, user }) => {
       if (user) {
-        // Fetch user roles when user first signs in
-        const userWithRoles = await (prisma as any).user.findUnique({
-          where: { id: user.id },
-          include: {
-            userRoles: {
-              where: { isActive: true },
-              include: {
-                role: {
-                  include: {
-                    rolePermissions: {
-                      include: {
-                        permission: true
+        try {
+          // Fetch user roles when user first signs in
+          const userWithRoles = await prisma.user.findUnique({
+            where: { id: user.id },
+            include: {
+              userRoles: {
+                where: { isActive: true },
+                include: {
+                  role: {
+                    include: {
+                      rolePermissions: {
+                        include: {
+                          permission: true
+                        }
                       }
                     }
                   }
                 }
               }
             }
-          }
-        });
+          });
 
-        if (userWithRoles) {
-          const roles = userWithRoles.userRoles.map((ur: any) => ur.role.name);
-          const permissions = userWithRoles.userRoles.flatMap((ur: any) => 
-            ur.role.rolePermissions.map((rp: any) => rp.permission.name)
-          );
-          
-          token.roles = roles;
-          token.permissions = permissions;
-          token.isAdmin = roles.includes('admin');
+          if (userWithRoles) {
+            const roles = userWithRoles.userRoles.map((ur) => ur.role.name);
+            const permissions = userWithRoles.userRoles.flatMap((ur) => 
+              ur.role.rolePermissions.map((rp) => rp.permission.name)
+            );
+            
+            token.roles = roles;
+            token.permissions = permissions;
+            token.isAdmin = roles.includes('admin');
+          }
+        } catch (error) {
+          console.error('Error fetching user roles in JWT callback:', error);
+          token.roles = [];
+          token.permissions = [];
+          token.isAdmin = false;
         }
       }
       return token
@@ -101,9 +122,9 @@ export const config = {
       user: {
         ...session.user,
         id: token.sub!,
-        roles: token.roles as string[],
-        permissions: token.permissions as string[],
-        isAdmin: token.isAdmin as boolean,
+        roles: (token.roles as string[]) || [],
+        permissions: (token.permissions as string[]) || [],
+        isAdmin: (token.isAdmin as boolean) || false,
       },
     }),
     authorized: ({ auth, request: { nextUrl } }) => {

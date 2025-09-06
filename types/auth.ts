@@ -5,7 +5,9 @@ export interface AuthUser {
   name?: string | null
   email?: string | null
   image?: string | null
-  role: UserRole
+  roles?: string[]
+  permissions?: string[]
+  isAdmin?: boolean
   emailVerified?: Date | null
 }
 

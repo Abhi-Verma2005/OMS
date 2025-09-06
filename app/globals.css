@@ -11,13 +11,13 @@
   --card-foreground: oklch(0.15 0.01 0); /* Dark gray to black */
   --popover: oklch(1 0 0); /* Pure white */
   --popover-foreground: oklch(0.15 0.01 0); /* Dark gray to black */
-  --primary: oklch(0.85 0.12 85); /* Lighter golden yellow */
-  --primary-foreground: oklch(0.15 0.01 0); /* Dark gray to black */
-  --secondary: oklch(0.98 0.01 0); /* Very light gray */
-  --secondary-foreground: oklch(0.2 0.01 0); /* Dark gray */
-  --muted: oklch(0.98 0.01 0); /* Very light gray */
-  --muted-foreground: oklch(0.5 0.01 0); /* Medium gray */
-  --accent: oklch(0.97 0.04 85); /* Lighter yellow accent */
+  --primary: #FDC800; /* Custom golden yellow */
+  --primary-foreground: #000000; /* Black text on yellow */
+  --secondary: #F2C86C; /* Custom light yellow */
+  --secondary-foreground: #000000; /* Black text */
+  --muted: #FEFCE9; /* Custom cream background */
+  --muted-foreground: #666666; /* Medium gray */
+  --accent: #F2C86C; /* Custom light yellow accent */
   --accent-foreground: oklch(0.2 0.01 0); /* Dark gray */
   --destructive: oklch(0.63 0.23 25); /* Red for errors */
   --destructive-foreground: oklch(1 0 0); /* Pure white */
@@ -48,13 +48,13 @@
   --card-foreground: oklch(0.9 0.01 0); /* Light gray to white */
   --popover: oklch(0.08 0.01 0); /* Dark with subtle elevation */
   --popover-foreground: oklch(0.9 0.01 0); /* Light gray to white */
-  --primary: oklch(0.9 0.12 85); /* Lighter warm yellow */
-  --primary-foreground: oklch(0.05 0.01 0); /* Deep dark */
-  --secondary: oklch(0.15 0.01 0); /* Dark gray */
-  --secondary-foreground: oklch(0.9 0.01 0); /* Light gray to white */
-  --muted: oklch(0.15 0.01 0); /* Dark gray */
-  --muted-foreground: oklch(0.6 0.01 0); /* Medium gray */
-  --accent: oklch(0.25 0.03 85); /* Lighter yellow accent */
+  --primary: #FDC800; /* Custom golden yellow */
+  --primary-foreground: #000000; /* Black text on yellow */
+  --secondary: #F2C86C; /* Custom light yellow */
+  --secondary-foreground: #000000; /* Black text */
+  --muted: #FEFCE9; /* Custom cream background */
+  --muted-foreground: #666666; /* Medium gray */
+  --accent: #F2C86C; /* Custom light yellow accent */
   --accent-foreground: oklch(0.9 0.01 0); /* Light gray to white */
   --destructive: oklch(0.58 0.24 25); /* Red for errors */
   --destructive-foreground: oklch(0.9 0.01 0); /* Light gray to white */
@@ -183,5 +183,55 @@
   /* card spacing fix for compact layouts */
   .card-quiet {
     @apply bg-card border border-border rounded-xl shadow-sm;
+  }
+
+  /* Custom order status colors */
+  .status-paid {
+    @apply bg-[#FDC800] text-black border-[#FDC800];
+  }
+  
+  .status-pending {
+    @apply bg-[#F2C86C] text-black border-[#F2C86C];
+  }
+  
+  .status-failed {
+    @apply bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800;
+  }
+  
+  .status-cancelled {
+    @apply bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-800;
+  }
+
+  /* Transaction status colors */
+  .tx-success {
+    @apply bg-[#FDC800] text-black border-[#FDC800];
+  }
+  
+  .tx-initiated {
+    @apply bg-[#F2C86C] text-black border-[#F2C86C];
+  }
+  
+  .tx-failed {
+    @apply bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800;
+  }
+
+  /* Toast theme */
+  .toast-theme {
+    @apply bg-[#FEFCE9] border-[#F2C86C] text-[#986220];
+  }
+  
+  .toast-enter {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
 }
