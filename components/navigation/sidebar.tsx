@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/auth/user-menu"
-import { FileStack, Home, BarChart3, Shield, Filter, Menu, X } from "lucide-react"
+import { FileStack, Home, BarChart3, Shield, Filter, Menu, X, ShoppingCart } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -35,6 +35,12 @@ const navigation: NavItem[] = [
     name: "Dashboard",
     href: "/dashboard",
     icon: BarChart3,
+    requiresAuth: true,
+  },
+  {
+    name: "Cart",
+    href: "/cart",
+    icon: ShoppingCart,
     requiresAuth: true,
   },
   {
@@ -108,7 +114,7 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
                   "w-full h-12 transition-all duration-200",
                   isCollapsed ? "justify-center px-2" : "justify-start gap-3",
                   isActive
-                    ? "bg-yellow-400 hover:bg-yellow-300 text-gray-900"
+                    ? "bg-[#FDC800] hover:bg-[#F2C86C] text-black"
                     : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
                 title={isCollapsed ? item.name : undefined}
@@ -181,7 +187,7 @@ export function MobileSidebar() {
                     className={cn(
                       "w-full justify-start gap-3 h-12",
                       isActive
-                        ? "bg-yellow-400 hover:bg-yellow-300 text-gray-900"
+                        ? "bg-[#FDC800] hover:bg-[#F2C86C] text-black"
                         : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                     )}
                   >

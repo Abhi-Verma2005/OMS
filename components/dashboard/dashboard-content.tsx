@@ -53,16 +53,16 @@ interface DashboardContentProps {
 }
 
 const statusConfig = {
-  PENDING: { icon: Clock, color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300", label: "Pending" },
-  PAID: { icon: CheckCircle, color: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300", label: "Paid" },
-  FAILED: { icon: XCircle, color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300", label: "Failed" },
-  CANCELLED: { icon: AlertCircle, color: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300", label: "Cancelled" },
+  PENDING: { icon: Clock, color: "status-pending", label: "Pending" },
+  PAID: { icon: CheckCircle, color: "status-paid", label: "Paid" },
+  FAILED: { icon: XCircle, color: "status-failed", label: "Failed" },
+  CANCELLED: { icon: AlertCircle, color: "status-cancelled", label: "Cancelled" },
 }
 
 const transactionStatusConfig = {
-  INITIATED: { icon: Clock, color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300", label: "Initiated" },
-  SUCCESS: { icon: CheckCircle, color: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300", label: "Success" },
-  FAILED: { icon: XCircle, color: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300", label: "Failed" },
+  INITIATED: { icon: Clock, color: "tx-initiated", label: "Initiated" },
+  SUCCESS: { icon: CheckCircle, color: "tx-success", label: "Success" },
+  FAILED: { icon: XCircle, color: "tx-failed", label: "Failed" },
 }
 
 export function DashboardContent({ user, userRole }: DashboardContentProps) {
@@ -74,13 +74,21 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        console.log('🔄 Fetching orders from /api/user/orders...')
         const response = await fetch('/api/user/orders')
+        console.log('📡 Response status:', response.status)
+        console.log('📡 Response ok:', response.ok)
+        
         if (response.ok) {
           const data = await response.json()
+          console.log('📦 Orders data received:', data)
           setOrders(data.orders || [])
+        } else {
+          const errorData = await response.json()
+          console.error('❌ API Error:', errorData)
         }
       } catch (error) {
-        console.error('Error fetching orders:', error)
+        console.error('❌ Network/Request Error:', error)
       } finally {
         setLoading(false)
       }
@@ -107,7 +115,9 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
   }
 
   const getPendingOrders = () => {
-    return orders.filter(order => order.status === 'PENDING').length
+    // Since we no longer create PENDING orders, this will always be 0
+    // Orders are only created with final status (PAID, FAILED, CANCELLED)
+    return 0
   }
 
   const openOrderDetails = (order: Order) => {
@@ -206,10 +216,22 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
       {/* Recent Orders */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Orders</CardTitle>
-          <CardDescription>
-            Your latest purchases and their status
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                Recent Orders
+              </CardTitle>
+              <CardDescription>
+                Your latest purchases and their status
+              </CardDescription>
+            </div>
+            {orders.length > 0 && (
+              <Badge variant="secondary" className="text-sm">
+                {orders.length} total
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -232,41 +254,65 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
             <div className="space-y-4">
               {orders.slice(0, 5).map((order) => {
                 const StatusIcon = statusConfig[order.status].icon
+                const latestTransaction = order.transactions.length > 0 
+                  ? order.transactions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+                  : null
+                
                 return (
-                  <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <StatusIcon className="h-5 w-5 text-muted-foreground" />
+                  <div key={order.id} className="group flex items-center justify-between p-6 border border-[#F2C86C]/30 rounded-xl hover:border-[#FDC800]/50 hover:shadow-lg hover:shadow-[#FDC800]/10 transition-all duration-300 bg-gradient-to-r from-[#FEFCE9]/50 to-white">
+                    <div className="flex items-center space-x-4 flex-1">
+                      <div className="flex-shrink-0 p-3 rounded-full bg-[#F2C86C]/20 group-hover:bg-[#FDC800]/20 transition-colors">
+                        <StatusIcon className="h-6 w-6 text-[#986220]" />
                       </div>
-                      <div>
-                        <p className="font-medium">Order #{order.id.slice(-8)}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <p className="font-semibold text-lg text-[#986220]">Order #{order.id.slice(-8)}</p>
+                          {latestTransaction && (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs font-medium ${transactionStatusConfig[latestTransaction.status].color}`}
+                            >
+                              {transactionStatusConfig[latestTransaction.status].label}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-[#666666] mb-2 font-medium">
                           {order.items.length} item{order.items.length !== 1 ? 's' : ''} • {formatCurrency(order.totalAmount, order.currency)}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(order.createdAt), 'MMM dd, yyyy')}
-                        </p>
+                        <div className="flex items-center gap-4 text-xs text-[#888888]">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {format(new Date(order.createdAt), 'MMM dd, yyyy')}
+                          </span>
+                          {order.items.length > 0 && (
+                            <span className="flex items-center gap-1">
+                              <ShoppingCart className="h-3 w-3" />
+                              {order.items[0].siteName}{order.items.length > 1 && ` +${order.items.length - 1} more`}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={statusConfig[order.status].color}>
+                    <div className="flex items-center space-x-3">
+                      <Badge className={`${statusConfig[order.status].color} font-semibold px-3 py-1`}>
                         {statusConfig[order.status].label}
                       </Badge>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openOrderDetails(order)}
+                        className="border-[#F2C86C] text-[#986220] hover:bg-[#F2C86C] hover:text-black transition-colors"
                       >
                         <Eye className="h-4 w-4 mr-2" />
-                        View Details
+                        Details
                       </Button>
                     </div>
                   </div>
                 )
               })}
               {orders.length > 5 && (
-                <div className="text-center pt-4">
-                  <Button variant="outline">
+                <div className="text-center pt-4 border-t">
+                  <Button variant="outline" className="w-full">
                     View All Orders ({orders.length})
                   </Button>
                 </div>
@@ -278,98 +324,182 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
 
       {/* Order Details Modal */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Order Details
+            </DialogTitle>
             <DialogDescription>
-              Complete information about your order
+              Complete information about your order and transactions
             </DialogDescription>
           </DialogHeader>
           
           {selectedOrder && (
             <div className="space-y-6">
               {/* Order Summary */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-                <div>
-                  <p className="text-sm font-medium">Order ID</p>
-                  <p className="text-sm text-muted-foreground">{selectedOrder.id}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6 bg-gradient-to-r from-[#FEFCE9] to-[#F2C86C]/20 rounded-xl border border-[#F2C86C]/30">
+                <div className="text-center p-4 bg-white/50 rounded-lg">
+                  <p className="text-sm font-medium text-[#666666] mb-2">Order ID</p>
+                  <p className="text-sm font-mono text-[#986220] font-semibold">{selectedOrder.id}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">Status</p>
-                  <Badge className={statusConfig[selectedOrder.status].color}>
+                <div className="text-center p-4 bg-white/50 rounded-lg">
+                  <p className="text-sm font-medium text-[#666666] mb-2">Status</p>
+                  <Badge className={`${statusConfig[selectedOrder.status].color} font-semibold px-3 py-1`}>
                     {statusConfig[selectedOrder.status].label}
                   </Badge>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">Total Amount</p>
-                  <p className="text-sm text-muted-foreground">{formatCurrency(selectedOrder.totalAmount, selectedOrder.currency)}</p>
+                <div className="text-center p-4 bg-white/50 rounded-lg">
+                  <p className="text-sm font-medium text-[#666666] mb-2">Total Amount</p>
+                  <p className="text-xl font-bold text-[#986220]">{formatCurrency(selectedOrder.totalAmount, selectedOrder.currency)}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">Order Date</p>
-                  <p className="text-sm text-muted-foreground">{format(new Date(selectedOrder.createdAt), 'MMM dd, yyyy HH:mm')}</p>
+                <div className="text-center p-4 bg-white/50 rounded-lg">
+                  <p className="text-sm font-medium text-[#666666] mb-2">Order Date</p>
+                  <p className="text-sm text-[#986220] font-medium">{format(new Date(selectedOrder.createdAt), 'MMM dd, yyyy HH:mm')}</p>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-6">
+                <div className="text-center p-6 bg-gradient-to-br from-[#FEFCE9] to-[#F2C86C]/30 rounded-xl border border-[#F2C86C]/20">
+                  <div className="p-3 bg-[#FDC800]/20 rounded-full w-fit mx-auto mb-3">
+                    <ShoppingCart className="h-6 w-6 text-[#986220]" />
+                  </div>
+                  <p className="text-3xl font-bold text-[#986220]">{selectedOrder.items.length}</p>
+                  <p className="text-sm text-[#666666] font-medium">Items</p>
+                </div>
+                <div className="text-center p-6 bg-gradient-to-br from-[#FEFCE9] to-[#F2C86C]/30 rounded-xl border border-[#F2C86C]/20">
+                  <div className="p-3 bg-[#FDC800]/20 rounded-full w-fit mx-auto mb-3">
+                    <Receipt className="h-6 w-6 text-[#986220]" />
+                  </div>
+                  <p className="text-3xl font-bold text-[#986220]">{selectedOrder.transactions.length}</p>
+                  <p className="text-sm text-[#666666] font-medium">Transactions</p>
+                </div>
+                <div className="text-center p-6 bg-gradient-to-br from-[#FEFCE9] to-[#F2C86C]/30 rounded-xl border border-[#F2C86C]/20">
+                  <div className="p-3 bg-[#FDC800]/20 rounded-full w-fit mx-auto mb-3">
+                    <CheckCircle className="h-6 w-6 text-[#986220]" />
+                  </div>
+                  <p className="text-3xl font-bold text-[#986220]">
+                    {selectedOrder.transactions.filter(t => t.status === 'SUCCESS').length}
+                  </p>
+                  <p className="text-sm text-[#666666] font-medium">Successful</p>
                 </div>
               </div>
 
               {/* Order Items */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Order Items</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Site Name</TableHead>
-                      <TableHead>Site ID</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>With Content</TableHead>
-                      <TableHead>Quantity</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedOrder.items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.siteName}</TableCell>
-                        <TableCell className="text-muted-foreground">{item.siteId}</TableCell>
-                        <TableCell>{formatCurrency(item.priceCents, selectedOrder.currency)}</TableCell>
-                        <TableCell>
-                          <Badge variant={item.withContent ? "default" : "secondary"}>
-                            {item.withContent ? "Yes" : "No"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{item.quantity}</TableCell>
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-[#986220]">
+                  <div className="p-2 bg-[#FDC800]/20 rounded-lg">
+                    <ShoppingCart className="h-6 w-6" />
+                  </div>
+                  Order Items ({selectedOrder.items.length})
+                </h3>
+                <div className="border border-[#F2C86C]/30 rounded-xl overflow-hidden bg-white/50">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-[#FEFCE9]/50">
+                        <TableHead className="font-semibold text-[#986220]">Site Name</TableHead>
+                        <TableHead className="font-semibold text-[#986220]">Site ID</TableHead>
+                        <TableHead className="text-right font-semibold text-[#986220]">Unit Price</TableHead>
+                        <TableHead className="text-center font-semibold text-[#986220]">Quantity</TableHead>
+                        <TableHead className="text-right font-semibold text-[#986220]">Total</TableHead>
+                        <TableHead className="text-center font-semibold text-[#986220]">With Content</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedOrder.items.map((item, index) => {
+                        const itemTotal = item.priceCents * item.quantity
+                        return (
+                          <TableRow key={item.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-[#FEFCE9]/20'} hover:bg-[#F2C86C]/10 transition-colors`}>
+                            <TableCell className="font-semibold text-[#986220]">{item.siteName}</TableCell>
+                            <TableCell className="text-[#666666] font-mono text-sm">{item.siteId}</TableCell>
+                            <TableCell className="text-right font-medium text-[#986220]">{formatCurrency(item.priceCents, selectedOrder.currency)}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-[#F2C86C]/20 text-[#986220] border-[#F2C86C]">
+                                {item.quantity}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-[#986220]">{formatCurrency(itemTotal, selectedOrder.currency)}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge 
+                                variant={item.withContent ? "default" : "secondary"} 
+                                className={`text-xs font-medium ${item.withContent ? 'bg-[#FDC800] text-black' : 'bg-[#F2C86C] text-black'}`}
+                              >
+                                {item.withContent ? "Yes" : "No"}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="flex justify-end mt-6 p-6 bg-gradient-to-r from-[#FEFCE9] to-[#F2C86C]/20 rounded-xl border border-[#F2C86C]/30">
+                  <div className="text-right">
+                    <p className="text-sm text-[#666666] font-medium mb-2">Order Total</p>
+                    <p className="text-3xl font-bold text-[#986220]">{formatCurrency(selectedOrder.totalAmount, selectedOrder.currency)}</p>
+                  </div>
+                </div>
               </div>
 
               {/* Transactions */}
               {selectedOrder.transactions.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Transaction History</h3>
-                  <div className="space-y-3">
-                    {selectedOrder.transactions.map((transaction) => {
-                      const TransactionIcon = transactionStatusConfig[transaction.status].icon
-                      return (
-                        <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <TransactionIcon className="h-5 w-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">{formatCurrency(transaction.amount, transaction.currency)}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {transaction.provider && `via ${transaction.provider}`}
-                                {transaction.reference && ` • Ref: ${transaction.reference}`}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {format(new Date(transaction.createdAt), 'MMM dd, yyyy HH:mm')}
-                              </p>
+                  <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-[#986220]">
+                    <div className="p-2 bg-[#FDC800]/20 rounded-lg">
+                      <ExternalLink className="h-6 w-6" />
+                    </div>
+                    Transaction History ({selectedOrder.transactions.length})
+                  </h3>
+                  <div className="space-y-4">
+                    {selectedOrder.transactions
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .map((transaction) => {
+                        const TransactionIcon = transactionStatusConfig[transaction.status].icon
+                        return (
+                          <div key={transaction.id} className="group flex items-center justify-between p-6 border border-[#F2C86C]/30 rounded-xl hover:border-[#FDC800]/50 hover:shadow-lg hover:shadow-[#FDC800]/10 transition-all duration-300 bg-gradient-to-r from-[#FEFCE9]/30 to-white">
+                            <div className="flex items-center space-x-4 flex-1">
+                              <div className="flex-shrink-0 p-3 rounded-full bg-[#F2C86C]/20 group-hover:bg-[#FDC800]/20 transition-colors">
+                                <TransactionIcon className="h-6 w-6 text-[#986220]" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <p className="font-bold text-xl text-[#986220]">{formatCurrency(transaction.amount, transaction.currency)}</p>
+                                  <Badge className={`${transactionStatusConfig[transaction.status].color} font-semibold px-3 py-1`}>
+                                    {transactionStatusConfig[transaction.status].label}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-[#666666] mb-2">
+                                  {transaction.provider && (
+                                    <span className="font-medium">via {transaction.provider}</span>
+                                  )}
+                                  {transaction.reference && (
+                                    <span className="font-mono bg-[#F2C86C]/20 px-2 py-1 rounded text-xs">Ref: {transaction.reference}</span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-[#888888] flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {format(new Date(transaction.createdAt), 'MMM dd, yyyy HH:mm:ss')}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right p-4 bg-white/50 rounded-lg border border-[#F2C86C]/20">
+                              <p className="text-xs text-[#666666] font-medium mb-1">Transaction ID</p>
+                              <p className="text-xs font-mono text-[#986220] font-semibold">{transaction.id.slice(-8)}</p>
                             </div>
                           </div>
-                          <Badge className={transactionStatusConfig[transaction.status].color}>
-                            {transactionStatusConfig[transaction.status].label}
-                          </Badge>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
                   </div>
+                </div>
+              )}
+
+              {/* No Transactions Message */}
+              {selectedOrder.transactions.length === 0 && (
+                <div className="text-center py-8 border-2 border-dashed border-muted rounded-lg">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Transactions Yet</h3>
+                  <p className="text-muted-foreground">Payment transactions will appear here once initiated.</p>
                 </div>
               )}
             </div>

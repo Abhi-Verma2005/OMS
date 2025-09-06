@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useToast } from "@/components/ui/toast"
 import { Loader2, Mail, Lock, User } from "lucide-react"
 import { signUpAction } from "@/actions/auth-actions"
 
@@ -17,6 +18,7 @@ export function SignUpForm() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const router = useRouter()
+  const { addToast } = useToast()
 
   const {
     register,
@@ -34,8 +36,18 @@ export function SignUpForm() {
 
         if (result?.error) {
           setError(result.error)
+          addToast({
+            type: 'error',
+            title: 'Sign Up Failed',
+            description: result.error,
+          })
         } else {
           setSuccess(true)
+          addToast({
+            type: 'success',
+            title: 'Account Created!',
+            description: 'Your account has been created successfully. Redirecting to sign in...',
+          })
           // Redirect to sign-in page after successful signup
           setTimeout(() => {
             router.push("/auth/signin?message=Account created successfully. Please sign in.")
@@ -43,6 +55,11 @@ export function SignUpForm() {
         }
       } catch (err) {
         setError("Something went wrong. Please try again.")
+        addToast({
+          type: 'error',
+          title: 'Sign Up Error',
+          description: 'Something went wrong. Please try again.',
+        })
       }
     })
   }

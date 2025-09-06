@@ -11,12 +11,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useToast } from "@/components/ui/toast"
 import { Loader2, Mail, Lock } from "lucide-react"
 
 export function SignInForm() {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { addToast } = useToast()
 
   const {
     register,
@@ -38,11 +40,26 @@ export function SignInForm() {
 
         if (result?.error) {
           setError("Invalid credentials. Please try again.")
+          addToast({
+            type: 'error',
+            title: 'Sign In Failed',
+            description: 'Invalid credentials. Please check your email and password.',
+          })
         } else {
+          addToast({
+            type: 'success',
+            title: 'Welcome Back!',
+            description: 'You have successfully signed in.',
+          })
           router.push("/dashboard")
         }
       } catch (err) {
         setError("Something went wrong. Please try again.")
+        addToast({
+          type: 'error',
+          title: 'Sign In Error',
+          description: 'Something went wrong. Please try again.',
+        })
       }
     })
   }
