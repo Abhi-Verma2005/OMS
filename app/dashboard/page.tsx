@@ -46,39 +46,49 @@ export default async function DashboardPage() {
           </div>
         </div>
       }>
-        <div className="container mx-auto p-6 space-y-8">
+        <div className="container mx-auto space-y-12 anim-page-in">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-gray-600">See what success looks like and plan your growth</p>
+          <div className="text-center space-y-4 anim-fade-in">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">Dashboard</h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">See what success looks like and plan your growth with data-driven insights</p>
           </div>
 
           {/* Hero Stats - Immediate Impact */}
-          <HeroStatsCards />
+          <div className="anim-fade-in" style={{animationDelay: '0.2s'}}>
+            <HeroStatsCards />
+          </div>
 
           {/* Trust Elements */}
-          <TrustBadges />
+          <div className="anim-fade-in" style={{animationDelay: '0.4s'}}>
+            <TrustBadges />
+          </div>
 
           {/* Client Success Stories - Social Proof */}
-          <CaseStudiesCarousel />
+          <div className="anim-fade-in" style={{animationDelay: '0.6s'}}>
+            <CaseStudiesCarousel />
+          </div>
 
           {/* Growth Visualization */}
-          <GrowthChart />
+          <div className="anim-fade-in" style={{animationDelay: '0.8s'}}>
+            <GrowthChart />
+          </div>
 
           {/* ROI Calculator - Personal Relevance */}
-          <ROICalculator />
+          <div className="anim-fade-in" style={{animationDelay: '1s'}}>
+            <ROICalculator />
+          </div>
 
           {/* Call to Action Section */}
-          <div className="bg-gradient-to-r from-[#FDC800] to-[#F2C86C] rounded-2xl p-8 text-center text-black">
-            <h2 className="text-2xl font-bold mb-4">Ready to Join Our Success Stories?</h2>
-            <p className="text-gray-800 mb-6">
+          <div className="bg-gradient-primary rounded-3xl p-12 text-center text-primary-foreground shadow-modern-xl anim-scale-in" style={{animationDelay: '1.2s'}}>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Join Our Success Stories?</h2>
+            <p className="text-lg text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
               Join Mahindra Auto, UpGrad, and Proteantech in achieving exceptional growth
             </p>
-            <div className="flex gap-4 justify-center">
-              <button className="bg-black text-[#FDC800] px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
+            <div className="flex flex-col sm:flex-row gap-6 justify-center">
+              <button className="bg-background text-foreground px-8 py-4 rounded-xl font-semibold hover:bg-background/90 transition-all duration-300 hover:scale-105 shadow-modern">
                 Browse Publishers
               </button>
-              <button className="border-2 border-black text-black px-6 py-3 rounded-lg font-semibold hover:bg-black hover:text-[#FDC800] transition-colors">
+              <button className="border-2 border-background text-background px-8 py-4 rounded-xl font-semibold hover:bg-background hover:text-foreground transition-all duration-300 hover:scale-105">
                 Schedule Consultation
               </button>
             </div>

@@ -65,23 +65,23 @@ export function MainNav() {
   })
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-950/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center">
-                <FileStack className="w-4 h-4 text-gray-900" />
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-all duration-300 group">
+              <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-modern group-hover:shadow-modern-lg transition-all duration-300 group-hover:scale-105">
+                <FileStack className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
+              <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
                 OMS
               </span>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="hidden md:flex items-center space-x-2">
             {filteredNavigation.map((item) => {
               const isActive = pathname === item.href
               return (
@@ -90,10 +90,10 @@ export function MainNav() {
                     variant={isActive ? "default" : "ghost"}
                     size="sm"
                     className={cn(
-                      "flex items-center gap-2",
+                      "flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300",
                       isActive
-                        ? "bg-yellow-400 hover:bg-yellow-300 text-gray-900"
-                        : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-primary text-primary-foreground shadow-modern hover:shadow-modern-lg hover:scale-105"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:scale-105"
                     )}
                   >
                     <item.icon className="w-4 h-4" />
@@ -105,13 +105,13 @@ export function MainNav() {
           </nav>
 
           {/* Right side actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {isAuthenticated && !isAdmin && (
               <Link href="/cart">
-                <Button variant="ghost" size="sm" className="relative">
+                <Button variant="ghost" size="sm" className="relative p-3 rounded-xl hover:bg-accent/50 transition-all duration-300 hover:scale-105">
                   <ShoppingCart className="w-4 h-4" />
                   {cartItemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold shadow-modern">
                       {cartItemCount}
                     </span>
                   )}
