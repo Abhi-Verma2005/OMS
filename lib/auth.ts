@@ -5,6 +5,7 @@ import Discord from "next-auth/providers/discord"
 import Resend from "next-auth/providers/resend"
 import Credentials from "next-auth/providers/credentials"
 import { prisma } from "./db"
+import { ActivityLogger } from "./activity-logger"
 import * as bcrypt from "bcryptjs"
 import type { NextAuthConfig } from "next-auth"
 import type { UserRole } from "@prisma/client"
@@ -15,10 +16,12 @@ export const config = {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     Discord({
       clientId: process.env.AUTH_DISCORD_ID!,
       clientSecret: process.env.AUTH_DISCORD_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     Resend({
       apiKey: process.env.AUTH_RESEND_KEY!,
@@ -74,7 +77,11 @@ export const config = {
     }),
   ],
   callbacks: {
-    jwt: async ({ token, user }) => {
+    async signIn({ user, account, profile, email, credentials }) {
+      // Allow all sign-ins - account linking is handled by allowDangerousEmailAccountLinking
+      return true;
+    },
+    jwt: async ({ token, user, trigger, account }) => {
       if (user) {
         try {
           // Fetch user roles when user first signs in
@@ -107,6 +114,18 @@ export const config = {
             token.roles = roles;
             token.permissions = permissions;
             token.isAdmin = roles.includes('admin');
+
+            // Log sign in activity
+            await ActivityLogger.logAuth(
+              user.id,
+              'USER_SIGNIN',
+              `User signed in via ${user.email}`,
+              {
+                provider: account?.provider || 'credentials',
+                roles: roles,
+                isAdmin: roles.includes('admin')
+              }
+            );
           }
         } catch (error) {
           console.error('Error fetching user roles in JWT callback:', error);

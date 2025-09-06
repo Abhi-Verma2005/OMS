@@ -15,6 +15,7 @@ const errorMessages = {
   Configuration: "There is a problem with the server configuration.",
   AccessDenied: "Access denied. You do not have permission to sign in.",
   Verification: "The verification token has expired or has already been used.",
+  OAuthAccountNotLinked: "An account with this email already exists. Please sign in with your password first, then you can link your Google account in your profile settings.",
   Default: "An error occurred during authentication.",
 }
 
@@ -47,17 +48,35 @@ export default function AuthErrorPage({ searchParams }: ErrorPageProps) {
             </Alert>
             
             <div className="flex flex-col gap-2">
-              <Button asChild>
-                <Link href="/auth/signin">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Try Again
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/">
-                  Go Home
-                </Link>
-              </Button>
+              {error === 'OAuthAccountNotLinked' ? (
+                <>
+                  <Button asChild>
+                    <Link href="/auth/signin">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Sign in with Password
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/auth/signup">
+                      Create New Account
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild>
+                    <Link href="/auth/signin">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Try Again
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/">
+                      Go Home
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react'
 import { Site } from '@/lib/sample-sites'
 import { useToast } from '@/components/ui/toast'
+import { useActivityLogger } from '@/hooks/use-activity-logger'
 
 // Cart item type
 export interface CartItem {
@@ -128,6 +129,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState)
   const { addToast } = useToast()
+  const { logCart } = useActivityLogger()
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -158,6 +160,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = (site: Site) => {
     dispatch({ type: 'ADD_ITEM', payload: { site } })
     
+    // Log cart activity
+    logCart(
+      'ITEM_ADDED_TO_CART',
+      `Added ${site.name} to cart`,
+      {
+        siteId: site.id,
+        siteName: site.name,
+        price: site.publishing.price,
+        category: site.category
+      }
+    )
+    
     // Show success toast
     addToast({
       type: 'success',
@@ -168,11 +182,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const removeItem = (siteId: string) => {
+    const item = state.items.find(item => item.site.id === siteId)
     dispatch({ type: 'REMOVE_ITEM', payload: { siteId } })
+    
+    // Log cart activity
+    if (item) {
+      logCart(
+        'ITEM_REMOVED_FROM_CART',
+        `Removed ${item.site.name} from cart`,
+        {
+          siteId: item.site.id,
+          siteName: item.site.name,
+          price: item.site.publishing.price
+        }
+      )
+    }
   }
 
   const clearCart = () => {
+    const itemCount = state.items.length
     dispatch({ type: 'CLEAR_CART' })
+    
+    // Log cart activity
+    if (itemCount > 0) {
+      logCart(
+        'CART_CLEARED',
+        `Cleared cart with ${itemCount} items`,
+        {
+          itemCount,
+          totalValue: getTotalPrice()
+        }
+      )
+    }
   }
 
   const toggleCart = () => {

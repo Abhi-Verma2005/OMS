@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { ActivityLogger, extractRequestInfo } from '@/lib/activity-logger'
 
 // Create an order (requires explicit status - no PENDING orders allowed)
 export async function POST(req: NextRequest) {
@@ -57,6 +58,29 @@ export async function POST(req: NextRequest) {
       }
     })
 
+    // Log order creation activity
+    const { ipAddress, userAgent } = extractRequestInfo(req);
+    await ActivityLogger.logOrder(
+      session.user.id,
+      'ORDER_CREATED',
+      `Order created with ${items.length} items, total: $${(totalAmount / 100).toFixed(2)}`,
+      {
+        orderId: order.id,
+        status,
+        totalAmount,
+        currency,
+        itemCount: items.length,
+        items: items.map(item => ({
+          siteId: item.siteId,
+          siteName: item.siteName,
+          quantity: item.quantity ?? 1,
+          priceCents: item.priceCents
+        }))
+      },
+      ipAddress,
+      userAgent
+    );
+
     return NextResponse.json({ order, transaction: tx }, { status: 201 })
   } catch (err) {
     console.error('Create order error', err)
@@ -87,6 +111,22 @@ export async function PATCH(req: NextRequest) {
       })
       return paidOrder
     })
+
+    // Log order payment activity
+    const { ipAddress, userAgent } = extractRequestInfo(req);
+    await ActivityLogger.logPayment(
+      session.user.id,
+      'ORDER_PAID',
+      `Order ${order.id} marked as paid`,
+      {
+        orderId: order.id,
+        reference,
+        totalAmount: order.totalAmount,
+        currency: order.currency
+      },
+      ipAddress,
+      userAgent
+    );
 
     return NextResponse.json({ order: updated }, { status: 200 })
   } catch (err) {

@@ -60,8 +60,8 @@ const secondaryNavigation = [
     current: false
   },
   {
-    name: 'Audit Logs',
-    href: '/admin/audit-logs',
+    name: 'User Activities',
+    href: '/admin/activities',
     icon: Activity,
     current: false
   },

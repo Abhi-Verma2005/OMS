@@ -58,6 +58,7 @@ model User {
   savedViews     SavedView[]
   sessions       Session[]
   userRoles      UserRole[]
+  activities     UserActivity[]
 
   @@map("users")
 }
@@ -201,6 +202,36 @@ model SavedView {
 
   @@unique([userId, name])
   @@map("saved_views")
+}
+
+model UserActivity {
+  id          String            @id @default(cuid())
+  userId      String            @map("user_id")
+  activity    String
+  category    ActivityCategory
+  description String?
+  metadata    Json?
+  ipAddress   String?           @map("ip_address")
+  userAgent   String?           @map("user_agent")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_activities")
+  @@index([userId, createdAt])
+  @@index([category, createdAt])
+}
+
+enum ActivityCategory {
+  AUTHENTICATION
+  NAVIGATION
+  ORDER
+  PAYMENT
+  CART
+  PROFILE
+  ADMIN
+  API
+  ERROR
+  OTHER
 }
 
 enum OrderStatus {

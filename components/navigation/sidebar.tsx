@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/auth/user-menu"
-import { FileStack, Home, BarChart3, Shield, Filter, Menu, X, ShoppingCart } from "lucide-react"
+import { FileStack, Home, BarChart3, Shield, Filter, Menu, X, ShoppingCart, Receipt } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -35,6 +35,12 @@ const navigation: NavItem[] = [
     name: "Dashboard",
     href: "/dashboard",
     icon: BarChart3,
+    requiresAuth: true,
+  },
+  {
+    name: "Orders",
+    href: "/orders",
+    icon: Receipt,
     requiresAuth: true,
   },
   {

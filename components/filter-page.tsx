@@ -194,33 +194,34 @@ type FilterPebble = {
   label: string
   icon: ReactNode
   category: "basic" | "authority" | "traffic" | "publishing" | "quality" | "additional"
+  tooltip: string
 }
 
 const filterPebbles: FilterPebble[] = [
   // Basic
-  { key: "niche", label: "Niche", icon: <FileStack className="w-3 h-3" />, category: "basic" },
-  { key: "language", label: "Language", icon: <FileStack className="w-3 h-3" />, category: "basic" },
-  { key: "country", label: "Country", icon: <FileStack className="w-3 h-3" />, category: "basic" },
+  { key: "niche", label: "Niche", icon: <FileStack className="w-3 h-3" />, category: "basic", tooltip: "Filter by website topic (Technology, Health, Finance, etc.)" },
+  { key: "language", label: "Language", icon: <FileStack className="w-3 h-3" />, category: "basic", tooltip: "Filter by website language (English, Spanish, French, etc.)" },
+  { key: "country", label: "Country", icon: <FileStack className="w-3 h-3" />, category: "basic", tooltip: "Filter by website country for geo-targeted content" },
   
   // Authority
-  { key: "daMin", label: "Domain Authority", icon: <Fingerprint className="w-3 h-3" />, category: "authority" },
-  { key: "paMin", label: "Page Authority", icon: <Fingerprint className="w-3 h-3" />, category: "authority" },
-  { key: "drMin", label: "Domain Rating", icon: <Fingerprint className="w-3 h-3" />, category: "authority" },
-  { key: "spamMax", label: "Spam Score", icon: <Fingerprint className="w-3 h-3" />, category: "authority" },
-  { key: "tool", label: "SEO Tool", icon: <Fingerprint className="w-3 h-3" />, category: "authority" },
+  { key: "daMin", label: "Domain Authority", icon: <Fingerprint className="w-3 h-3" />, category: "authority", tooltip: "Minimum Domain Authority score (higher = more authoritative)" },
+  { key: "paMin", label: "Page Authority", icon: <Fingerprint className="w-3 h-3" />, category: "authority", tooltip: "Minimum Page Authority score for ranking potential" },
+  { key: "drMin", label: "Domain Rating", icon: <Fingerprint className="w-3 h-3" />, category: "authority", tooltip: "Minimum Domain Rating from Ahrefs (higher = stronger backlinks)" },
+  { key: "spamMax", label: "Spam Score", icon: <Fingerprint className="w-3 h-3" />, category: "authority", tooltip: "Maximum Spam Score (lower = cleaner websites)" },
+  { key: "tool", label: "SEO Tool", icon: <Fingerprint className="w-3 h-3" />, category: "authority", tooltip: "Choose SEO tool for metrics (Moz, Ahrefs, etc.)" },
   
   // Traffic
-  { key: "semrushAuthorityMin", label: "Semrush Authority", icon: <Cpu className="w-3 h-3" />, category: "traffic" },
-  { key: "semrushOverallTrafficMin", label: "Overall Traffic", icon: <Cpu className="w-3 h-3" />, category: "traffic" },
-  { key: "semrushOrganicTrafficMin", label: "Organic Traffic", icon: <Cpu className="w-3 h-3" />, category: "traffic" },
-  { key: "trend", label: "Traffic Trend", icon: <Cpu className="w-3 h-3" />, category: "traffic" },
+  { key: "semrushAuthorityMin", label: "Semrush Authority", icon: <Cpu className="w-3 h-3" />, category: "traffic", tooltip: "Minimum Semrush Authority score" },
+  { key: "semrushOverallTrafficMin", label: "Overall Traffic", icon: <Cpu className="w-3 h-3" />, category: "traffic", tooltip: "Minimum monthly overall traffic" },
+  { key: "semrushOrganicTrafficMin", label: "Organic Traffic", icon: <Cpu className="w-3 h-3" />, category: "traffic", tooltip: "Minimum monthly organic search traffic" },
+  { key: "trend", label: "Traffic Trend", icon: <Cpu className="w-3 h-3" />, category: "traffic", tooltip: "Traffic trend: increasing, decreasing, or stable" },
   
   // Publishing
-  { key: "priceMin", label: "Price Range", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
-  { key: "tatDaysMax", label: "TAT Days", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
-  { key: "backlinkNature", label: "Backlink Nature", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
-  { key: "linkPlacement", label: "Link Placement", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
-  { key: "permanence", label: "Permanence", icon: <ReceiptText className="w-3 h-3" />, category: "publishing" },
+  { key: "priceMin", label: "Price Range", icon: <ReceiptText className="w-3 h-3" />, category: "publishing", tooltip: "Minimum price for guest posts or sponsored content" },
+  { key: "tatDaysMax", label: "TAT Days", icon: <ReceiptText className="w-3 h-3" />, category: "publishing", tooltip: "Maximum Turnaround Time in days" },
+  { key: "backlinkNature", label: "Backlink Nature", icon: <ReceiptText className="w-3 h-3" />, category: "publishing", tooltip: "Backlink type: Do-follow, No-follow, or Sponsored" },
+  { key: "linkPlacement", label: "Link Placement", icon: <ReceiptText className="w-3 h-3" />, category: "publishing", tooltip: "Where links are placed: In-content, Author bio, or Footer" },
+  { key: "permanence", label: "Permanence", icon: <ReceiptText className="w-3 h-3" />, category: "publishing", tooltip: "How long links should remain on the website" },
   
 ]
 
@@ -1727,23 +1728,29 @@ export default function CompactFilterPage() {
                                    filters[pebble.key] !== null
                     
                     return (
-                      <button
-                        key={pebble.key}
-                        onClick={() => openFilterModal(pebble.key)}
-                        disabled={loading}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border transition-all duration-200 hover:scale-105",
-                          hasValue 
-                            ? "bg-yellow-400 text-gray-900 border-yellow-400 shadow-md" 
-                            : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600",
-                          loading && "opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        {pebble.icon}
-                        <span>{pebble.label}</span>
-                        {hasValue && <Plus className="w-3 h-3 rotate-45" />}
-                        {loading && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
-                      </button>
+                      <div key={pebble.key} className="relative group">
+                        <button
+                          onClick={() => openFilterModal(pebble.key)}
+                          disabled={loading}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border transition-all duration-200 hover:scale-105",
+                            hasValue 
+                              ? "bg-yellow-400 text-gray-900 border-yellow-400 shadow-md" 
+                              : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600",
+                            loading && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          {pebble.icon}
+                          <span>{pebble.label}</span>
+                          {hasValue && <Plus className="w-3 h-3 rotate-45" />}
+                          {loading && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+                        </button>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 w-64 shadow-lg">
+                          <div className="font-medium mb-1">{pebble.label}</div>
+                          <div className="text-gray-300 text-xs leading-relaxed">{pebble.tooltip}</div>
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
                     )
                   })}
                 </div>
