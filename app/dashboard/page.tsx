@@ -1,13 +1,12 @@
 import { Suspense } from "react"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { User, Mail, Calendar, Shield, Filter, ShoppingCart, Receipt, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react"
-import Link from "next/link"
 import { PageLayout } from "@/components/layout/page-layout"
-import { DashboardContent } from "@/components/dashboard/dashboard-content"
+import { HeroStatsCards } from "@/components/dashboard/HeroStatsCards"
+import { CaseStudiesCarousel } from "@/components/dashboard/CaseStudiesCarousel"
+import { GrowthChart } from "@/components/dashboard/GrowthChart"
+import { ROICalculator } from "@/components/dashboard/ROICalculator"
+import { TrustBadges } from "@/components/dashboard/TrustBadges"
 import { getUserWithRoles } from "@/lib/rbac"
 
 export default async function DashboardPage() {
@@ -47,7 +46,44 @@ export default async function DashboardPage() {
           </div>
         </div>
       }>
-        <DashboardContent user={user} userRole={isAdmin ? "ADMIN" : "USER"} />
+        <div className="container mx-auto p-6 space-y-8">
+          {/* Page Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-gray-600">See what success looks like and plan your growth</p>
+          </div>
+
+          {/* Hero Stats - Immediate Impact */}
+          <HeroStatsCards />
+
+          {/* Trust Elements */}
+          <TrustBadges />
+
+          {/* Client Success Stories - Social Proof */}
+          <CaseStudiesCarousel />
+
+          {/* Growth Visualization */}
+          <GrowthChart />
+
+          {/* ROI Calculator - Personal Relevance */}
+          <ROICalculator />
+
+          {/* Call to Action Section */}
+          <div className="bg-gradient-to-r from-[#FDC800] to-[#F2C86C] rounded-2xl p-8 text-center text-black">
+            <h2 className="text-2xl font-bold mb-4">Ready to Join Our Success Stories?</h2>
+            <p className="text-gray-800 mb-6">
+              Join Mahindra Auto, UpGrad, and Proteantech in achieving exceptional growth
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button className="bg-black text-[#FDC800] px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
+                Browse Publishers
+              </button>
+              <button className="border-2 border-black text-black px-6 py-3 rounded-lg font-semibold hover:bg-black hover:text-[#FDC800] transition-colors">
+                Schedule Consultation
+              </button>
+            </div>
+          </div>
+        </div>
       </Suspense>
     </PageLayout>
   )

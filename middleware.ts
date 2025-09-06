@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 
 export async function middleware(request: NextRequest) {
   const { nextUrl } = request
@@ -25,22 +24,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/signin', nextUrl))
   }
 
-  // Check if user is admin and trying to access user-only features
-  if (token && isUserOnlyRoute) {
-    try {
-      const session = await auth()
-      if (session?.user && (session.user as any)?.isAdmin) {
-        // Redirect admin users to admin dashboard when they try to access user features
-        return NextResponse.redirect(new URL('/admin', nextUrl))
-      }
-    } catch (error) {
-      console.error('Error checking admin status in middleware:', error)
-      // Continue with normal flow if there's an error
-    }
-  }
-
-  // For admin routes, we'll let the page handle the role check
-  // since we can't easily decode the JWT in middleware without the secret
+  // For admin routes and role-based redirects, let the page components handle the checks
+  // since we can't easily decode the JWT in middleware without database access
+  // This prevents the Prisma edge runtime error
 
   return NextResponse.next()
 }
