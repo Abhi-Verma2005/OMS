@@ -714,9 +714,9 @@ export default function CompactFilterPage() {
                 .split(',')
                 .map((n) => n.trim())
                 .filter(Boolean)
-                .map((n) => (
+                .map((n, index) => (
                   <Badge
-                    key={n}
+                    key={`${n}-${index}`}
                     variant="secondary"
                     className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-yellow-400/15 text-yellow-700 border border-yellow-400/30 dark:bg-yellow-400/10 dark:text-yellow-300 dark:border-yellow-400/20"
                   >
@@ -2146,9 +2146,9 @@ function SiteDetails({ site }: { site: Site }) {
                 .split(',')
                 .map((n) => n.trim())
                 .filter(Boolean)
-                .map((n) => (
+                .map((n, index) => (
                   <Badge
-                    key={n}
+                    key={`${n}-${index}`}
                     variant="secondary"
                     className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-yellow-400/15 text-yellow-700 border border-yellow-400/30 dark:bg-yellow-400/10 dark:text-yellow-300 dark:border-yellow-400/20"
                   >

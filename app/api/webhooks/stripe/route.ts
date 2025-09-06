@@ -78,113 +78,40 @@ export async function POST(request: NextRequest) {
         console.log('Parsed items:', parsedItems)
         
         try {
-          let order;
-          
-          // If we have an orderId in metadata, use that specific order
-          if (orderId) {
-            console.log('Looking for order with ID:', orderId)
-            order = await prisma.order.findUnique({
-              where: { id: orderId },
-              include: { items: true, transactions: true }
-            })
-            
-            if (order) {
-              console.log('Found order:', {
-                id: order.id,
-                status: order.status,
-                amount: order.totalAmount,
-                userId: order.userId
-              })
-              
-              // Update the specific order to PAID status
-              order = await prisma.order.update({
-                where: { id: order.id },
-                data: { status: 'PAID' },
-                include: { items: true, transactions: true }
-              })
-
-              console.log('Order updated to PAID:', order.id)
-
-              // Update or create transaction record
-              const transactionResult = await prisma.transaction.updateMany({
-                where: { orderId: order.id },
-                data: {
-                  status: 'SUCCESS',
-                  provider: 'stripe',
-                  reference: paymentIntent.id,
-                }
-              })
-
-              console.log('Transaction updated:', transactionResult)
-            } else {
-              console.error('Order not found with ID:', orderId)
-            }
-          } else {
-            // Fallback: Find existing pending order for this user
-            order = await prisma.order.findFirst({
-              where: {
-                userId,
-                status: 'PENDING',
+          // Always create a new order after successful payment
+          // Since we no longer create orders upfront, we always create them here
+          const order = await prisma.order.create({
+            data: {
+              userId,
+              totalAmount: paymentIntent.amount,
+              currency: paymentIntent.currency.toUpperCase(),
+              status: 'PAID',
+              items: {
+                create: parsedItems.map((item: any) => ({
+                  siteId: item.id,
+                  siteName: item.name,
+                  priceCents: Math.round(item.price * 100),
+                  withContent: false, // Default value
+                  quantity: item.quantity,
+                }))
               },
-              orderBy: { createdAt: 'desc' },
-              include: { items: true, transactions: true }
-            })
-
-            if (order) {
-              // Update existing order to PAID status
-              order = await prisma.order.update({
-                where: { id: order.id },
-                data: { status: 'PAID' },
-                include: { items: true, transactions: true }
-              })
-
-              // Update or create transaction record
-              await prisma.transaction.updateMany({
-                where: { orderId: order.id },
-                data: {
+              transactions: {
+                create: {
+                  amount: paymentIntent.amount,
+                  currency: paymentIntent.currency.toUpperCase(),
                   status: 'SUCCESS',
                   provider: 'stripe',
                   reference: paymentIntent.id,
                 }
-              })
-
-              console.log('Order updated to PAID:', order.id)
-            } else {
-              // Create new order if none exists (fallback)
-              order = await prisma.order.create({
-                data: {
-                  userId,
-                  totalAmount: paymentIntent.amount,
-                  currency: paymentIntent.currency.toUpperCase(),
-                  status: 'PAID',
-                  items: {
-                    create: parsedItems.map((item: any) => ({
-                      siteId: item.id,
-                      siteName: item.name,
-                      priceCents: Math.round(item.price * 100),
-                      withContent: false, // Default value
-                      quantity: item.quantity,
-                    }))
-                  },
-                  transactions: {
-                    create: {
-                      amount: paymentIntent.amount,
-                      currency: paymentIntent.currency.toUpperCase(),
-                      status: 'SUCCESS',
-                      provider: 'stripe',
-                      reference: paymentIntent.id,
-                    }
-                  }
-                },
-                include: {
-                  items: true,
-                  transactions: true,
-                }
-              })
-
-              console.log('Order created successfully:', order.id)
+              }
+            },
+            include: {
+              items: true,
+              transactions: true,
             }
-          }
+          })
+
+          console.log('Order created successfully after payment:', order.id)
         } catch (dbError) {
           console.error('Error handling order in database:', dbError)
         }
@@ -210,36 +137,45 @@ export async function POST(request: NextRequest) {
           error: paymentIntent.last_payment_error,
         })
 
-        // Create failed transaction record if we have the order
+        // Create a failed order record for tracking purposes
         if (paymentIntent.metadata.userId) {
           try {
-            // Find existing order or create a failed one
-            const existingOrder = await prisma.order.findFirst({
-              where: {
+            // Parse items from metadata
+            const items = paymentIntent.metadata.items ? JSON.parse(paymentIntent.metadata.items) : []
+            
+            // Create a failed order directly (no PENDING state)
+            const failedOrder = await prisma.order.create({
+              data: {
                 userId: paymentIntent.metadata.userId,
-                status: 'PENDING',
+                totalAmount: paymentIntent.amount,
+                currency: paymentIntent.currency.toUpperCase(),
+                status: 'FAILED',
+                items: {
+                  create: items.map((item: any) => ({
+                    siteId: item.id,
+                    siteName: item.name,
+                    priceCents: Math.round(item.price * 100),
+                    withContent: false,
+                    quantity: item.quantity,
+                  }))
+                },
+                transactions: {
+                  create: {
+                    amount: paymentIntent.amount,
+                    currency: paymentIntent.currency.toUpperCase(),
+                    status: 'FAILED',
+                    provider: 'stripe',
+                    reference: paymentIntent.id,
+                  }
+                }
               },
-              orderBy: { createdAt: 'desc' }
+              include: {
+                items: true,
+                transactions: true,
+              }
             })
 
-            if (existingOrder) {
-              await prisma.transaction.create({
-                data: {
-                  orderId: existingOrder.id,
-                  amount: paymentIntent.amount,
-                  currency: paymentIntent.currency.toUpperCase(),
-                  status: 'FAILED',
-                  provider: 'stripe',
-                  reference: paymentIntent.id,
-                }
-              })
-
-              // Update order status
-              await prisma.order.update({
-                where: { id: existingOrder.id },
-                data: { status: 'FAILED' }
-              })
-            }
+            console.log('Failed order created:', failedOrder.id)
           } catch (dbError) {
             console.error('Error handling failed payment:', dbError)
           }

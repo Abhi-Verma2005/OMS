@@ -115,7 +115,9 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
   }
 
   const getPendingOrders = () => {
-    return orders.filter(order => order.status === 'PENDING').length
+    // Since we no longer create PENDING orders, this will always be 0
+    // Orders are only created with final status (PAID, FAILED, CANCELLED)
+    return 0
   }
 
   const openOrderDetails = (order: Order) => {

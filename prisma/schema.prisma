@@ -151,7 +151,7 @@ model RolePermission {
 model Order {
   id           String        @id @default(cuid())
   userId       String        @map("user_id")
-  status       OrderStatus   @default(PENDING)
+  status       OrderStatus
   totalAmount  Int           @map("total_amount")
   currency     String        @default("USD")
   createdAt    DateTime      @default(now()) @map("created_at")

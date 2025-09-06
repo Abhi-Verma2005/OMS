@@ -13,7 +13,7 @@ const sampleSites = [
   { id: 'site_005', name: 'Engadget', price: 1599 },   // $15.99
 ];
 
-const orderStatuses = ['PENDING', 'PAID', 'FAILED', 'CANCELLED'];
+const orderStatuses = ['PAID', 'FAILED', 'CANCELLED']; // No PENDING orders allowed
 const transactionStatuses = ['INITIATED', 'SUCCESS', 'FAILED'];
 
 async function createSampleOrders() {

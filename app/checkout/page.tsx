@@ -104,7 +104,6 @@ export default function CheckoutPage() {
   const [clientSecret, setClientSecret] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>('')
-  const [orderId, setOrderId] = useState<string>('')
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -121,11 +120,11 @@ export default function CheckoutPage() {
     }
   }, [])
 
-  // Create payment intent and order when component mounts
+  // Create payment intent when component mounts (order will be created after successful payment)
   useEffect(() => {
-    if (!session || items.length === 0 || clientSecret || orderId) return
+    if (!session || items.length === 0 || clientSecret) return
 
-    const createPaymentIntentAndOrder = async () => {
+    const createPaymentIntent = async () => {
       try {
         setIsLoading(true)
         setError('')
@@ -137,37 +136,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })))
 
-        // First create the order
-        const orderResponse = await fetch('/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            items: items.map(item => ({
-              siteId: item.site.id,
-              siteName: item.site.name,
-              priceCents: Math.round(item.site.publishing.price * 100), // Convert to cents
-              withContent: false, // Default to false, can be made configurable
-              quantity: item.quantity,
-            })),
-            currency: 'USD',
-          }),
-        })
-
-        console.log('Order creation response status:', orderResponse.status)
-
-        if (!orderResponse.ok) {
-          const errorData = await orderResponse.json()
-          console.error('Order creation error:', errorData)
-          throw new Error(errorData.error || 'Failed to create order')
-        }
-
-        const { order } = await orderResponse.json()
-        console.log('Order created successfully:', order.id)
-        setOrderId(order.id)
-
-        // Then create payment intent with order ID in metadata
+        // Create payment intent only (order will be created after successful payment via webhook)
         const paymentResponse = await fetch('/api/payment-intent', {
           method: 'POST',
           headers: {
@@ -181,7 +150,6 @@ export default function CheckoutPage() {
               quantity: item.quantity,
             })),
             currency: 'usd',
-            orderId: order.id, // Pass the order ID to link payment intent with order
           }),
         })
 
@@ -197,15 +165,15 @@ export default function CheckoutPage() {
         console.log('Payment intent created successfully:', clientSecret)
         setClientSecret(clientSecret)
       } catch (err) {
-        console.error('Payment intent/order creation failed:', err)
+        console.error('Payment intent creation failed:', err)
         setError(err instanceof Error ? err.message : 'Failed to initialize payment')
       } finally {
         setIsLoading(false)
       }
     }
 
-    createPaymentIntentAndOrder()
-  }, [session, items, clientSecret, orderId])
+    createPaymentIntent()
+  }, [session, items, clientSecret])
 
   const getTotalPrice = () => {
     return items.reduce((total, item) => {
@@ -383,7 +351,7 @@ export default function CheckoutPage() {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Order ID</span>
-                  <span>{orderId ? `#${orderId.slice(-8)}` : 'Generating...'}</span>
+                  <span>Will be generated after payment</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Customer</span>

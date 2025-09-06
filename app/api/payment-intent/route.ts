@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { items, currency = 'usd', orderId } = await request.json()
-    console.log('Request body:', { items, currency, orderId })
+    console.log('Request body:', { items, currency, orderId: orderId || 'not provided' })
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       console.log('Error: No items provided')
