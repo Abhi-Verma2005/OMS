@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Search, Filter, Download, Eye, Calendar, User, Activity } from 'lucide-react';
+import { Loader2, Search, Filter, Download, Eye, Calendar, User, Activity, X } from 'lucide-react';
+import { GenericSearch, SearchConfig } from '@/components/ui/generic-search';
 type ActivityCategory = 'AUTHENTICATION' | 'NAVIGATION' | 'ORDER' | 'PAYMENT' | 'CART' | 'PROFILE' | 'ADMIN' | 'API' | 'ERROR' | 'OTHER';
 
 interface UserActivity {
@@ -44,16 +45,30 @@ interface ActivitiesResponse {
   totalPages: number;
 }
 
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  createdAt?: string;
+  _count?: {
+    userRoles: number;
+  };
+}
+
 export function ActivitiesManagement() {
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [stats, setStats] = useState<ActivityStats | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
-  const [userId, setUserId] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('all');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showUserFilter, setShowUserFilter] = useState(false);
 
   const categories: ActivityCategory[] = [
     'AUTHENTICATION',
@@ -68,15 +83,69 @@ export function ActivitiesManagement() {
     'OTHER'
   ];
 
+  // User search configuration
+  const userSearchConfig: SearchConfig<User> = {
+    endpoint: '/api/admin/users/search',
+    searchFields: [
+      { key: 'name', label: 'Name', type: 'text' },
+      { key: 'email', label: 'Email', type: 'email' },
+    ],
+    displayField: 'name',
+    secondaryField: 'email',
+    resultFields: [
+      { key: 'email', label: 'Email' },
+      { key: 'createdAt', label: 'Joined' },
+    ],
+    maxResults: 5,
+    minSearchLength: 1,
+    debounceMs: 300,
+    renderResult: (user) => (
+      <div className="flex items-center space-x-3 p-3 hover:bg-muted/50 transition-colors">
+        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+          <User className="h-4 w-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-sm truncate">
+            {user.name || 'No name'}
+          </div>
+          <div className="text-xs text-muted-foreground truncate">
+            {user.email}
+          </div>
+        </div>
+        <Badge variant="outline" className="text-xs flex-shrink-0">
+          {user._count?.userRoles || 0} role{(user._count?.userRoles || 0) !== 1 ? 's' : ''}
+        </Badge>
+      </div>
+    ),
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      console.log('Fetching users...');
+      const response = await fetch('/api/admin/users');
+      console.log('Users response:', response.status);
+      if (!response.ok) throw new Error('Failed to fetch users');
+      
+      const data = await response.json();
+      console.log('Users data:', data);
+      setUsers(data.users || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
   const fetchActivities = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '50',
+        limit: '20', // Show 20 recent activities by default
         ...(search && { search }),
         ...(category && category !== 'all' && { category }),
-        ...(userId && { userId }),
+        ...(selectedUserId && selectedUserId !== 'all' && { userId: selectedUserId }),
       });
 
       const response = await fetch(`/api/admin/activities?${params}`);
@@ -97,7 +166,7 @@ export function ActivitiesManagement() {
       setStatsLoading(true);
       const params = new URLSearchParams({
         days: '30',
-        ...(userId && { userId }),
+        ...(selectedUserId && selectedUserId !== 'all' && { userId: selectedUserId }),
       });
 
       const response = await fetch(`/api/admin/activities/stats?${params}`);
@@ -113,12 +182,16 @@ export function ActivitiesManagement() {
   };
 
   useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
     fetchActivities();
-  }, [page, search, category, userId]);
+  }, [page, search, category, selectedUserId]);
 
   useEffect(() => {
     fetchStats();
-  }, [userId]);
+  }, [selectedUserId]);
 
   const handleSearch = () => {
     setPage(1);
@@ -128,7 +201,26 @@ export function ActivitiesManagement() {
   const handleClearFilters = () => {
     setSearch('');
     setCategory('all');
-    setUserId('');
+    setSelectedUserId('all');
+    setPage(1);
+  };
+
+  const handleUserSelect = (userId: string) => {
+    setSelectedUserId(userId);
+    setPage(1);
+    setShowUserFilter(false);
+  };
+
+  const handleUserSearchSelect = (user: User) => {
+    setSelectedUser(user);
+    setSelectedUserId(user.id);
+    setPage(1);
+    setShowUserFilter(false);
+  };
+
+  const handleClearUserSelection = () => {
+    setSelectedUser(null);
+    setSelectedUserId('all');
     setPage(1);
   };
 
@@ -162,14 +254,113 @@ export function ActivitiesManagement() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">User Activities</h1>
           <p className="text-muted-foreground">
-            Monitor and track all user activities across the platform
+            {selectedUserId === 'all' 
+              ? 'Recent activities from all users' 
+              : `Activities for selected user`
+            }
           </p>
         </div>
-        <Button onClick={() => fetchActivities()} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
-          Refresh
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              console.log('Button clicked, current state:', showUserFilter);
+              setShowUserFilter(!showUserFilter);
+            }}
+            disabled={usersLoading}
+          >
+            <User className="h-4 w-4 mr-2" />
+            {selectedUserId === 'all' ? 'All Users' : selectedUser?.name || users.find(u => u.id === selectedUserId)?.name || 'Select User'}
+          </Button>
+          <Button onClick={() => fetchActivities()} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
+            Refresh
+          </Button>
+        </div>
       </div>
+
+      {showUserFilter && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Select User</CardTitle>
+            <CardDescription>Search and select a specific user to view their activities</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* All Users Option */}
+              <Button
+                variant={selectedUserId === 'all' ? 'default' : 'outline'}
+                onClick={() => handleUserSelect('all')}
+                className="w-full justify-start h-11"
+              >
+                <User className="h-4 w-4 mr-3" />
+                All Users
+              </Button>
+
+              {/* User Search */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-muted-foreground">Search Users</label>
+                <GenericSearch
+                  config={userSearchConfig}
+                  onSelect={handleUserSearchSelect}
+                  placeholder="Search by name or email..."
+                  className="w-full"
+                />
+              </div>
+
+              {/* Selected User Display */}
+              {selectedUser && (
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg border">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-9 w-9 rounded-full bg-background flex items-center justify-center flex-shrink-0">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">
+                        {selectedUser.name || 'No name'}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {selectedUser.email}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearUserSelection}
+                    className="flex-shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Recent Users (First 4-5) */}
+              {users.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-muted-foreground">Recent Users</label>
+                  <div className="space-y-2">
+                    {users.slice(0, 5).map((user) => (
+                      <Button
+                        key={user.id}
+                        variant={selectedUserId === user.id ? 'default' : 'outline'}
+                        onClick={() => handleUserSelect(user.id)}
+                        className="w-full justify-start h-auto p-3"
+                      >
+                        <User className="h-4 w-4 mr-3 flex-shrink-0" />
+                        <div className="text-left flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{user.name || 'No name'}</div>
+                          <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Cards */}
       {stats && (
@@ -233,7 +424,7 @@ export function ActivitiesManagement() {
           <CardDescription>Filter activities by various criteria</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <div>
               <label className="text-sm font-medium">Search</label>
               <div className="relative">
@@ -264,15 +455,6 @@ export function ActivitiesManagement() {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium">User ID</label>
-              <Input
-                placeholder="User ID"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-              />
-            </div>
-
             <div className="flex items-end space-x-2">
               <Button onClick={handleSearch} className="flex-1">
                 <Search className="h-4 w-4 mr-2" />
@@ -289,9 +471,14 @@ export function ActivitiesManagement() {
       {/* Activities Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Activities</CardTitle>
+          <CardTitle>
+            {selectedUserId === 'all' ? 'Recent Activities' : 'User Activities'}
+          </CardTitle>
           <CardDescription>
-            Showing {activities.length} activities (Page {page} of {totalPages})
+            {selectedUserId === 'all' 
+              ? `Showing ${activities.length} recent activities from all users (Page ${page} of ${totalPages})`
+              : `Showing ${activities.length} activities for selected user (Page ${page} of ${totalPages})`
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
