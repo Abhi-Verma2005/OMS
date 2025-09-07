@@ -102,14 +102,6 @@ export function AdminDashboard() {
             </div>
           )}
         </div>
-        <div className="flex items-center space-x-2">
-          <Button asChild>
-            <Link href="/admin/users">
-              <Plus className="h-4 w-4 mr-2" />
-              Add User
-            </Link>
-          </Button>
-        </div>
       </div>
 
       {/* Stats Cards */}

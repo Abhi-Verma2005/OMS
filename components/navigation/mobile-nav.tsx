@@ -64,21 +64,21 @@ export function MobileNav() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="md:hidden">
+        <Button variant="ghost" size="sm" className="md:hidden p-2">
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72">
+      <SheetContent side="left" className="w-80 sm:w-96">
         <div className="flex flex-col space-y-6 mt-8">
           {/* User Info */}
           {isAuthenticated && (
             <div className="flex items-center space-x-3 pb-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-gray-900" />
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                <User className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {session.user?.name || session.user?.email}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -97,14 +97,14 @@ export function MobileNav() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-yellow-400 text-gray-900"
+                      ? "bg-primary text-primary-foreground"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
                   )}
                   onClick={() => setOpen(false)}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
                   <span>{item.name}</span>
                 </Link>
               )
@@ -116,18 +116,18 @@ export function MobileNav() {
             <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
               <Link
                 href="/auth/signin"
-                className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
                 onClick={() => setOpen(false)}
               >
-                <User className="h-4 w-4" />
+                <User className="h-5 w-5 flex-shrink-0" />
                 <span>Sign In</span>
               </Link>
               <Link
                 href="/auth/signup"
-                className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
                 onClick={() => setOpen(false)}
               >
-                <User className="h-4 w-4" />
+                <User className="h-5 w-5 flex-shrink-0" />
                 <span>Sign Up</span>
               </Link>
             </div>

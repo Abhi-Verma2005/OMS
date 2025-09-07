@@ -157,15 +157,15 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
       </div>
       
       {/* Quick Navigation */}
-      <div className="flex flex-wrap gap-4">
-        <Button asChild>
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <Button asChild className="w-full sm:w-auto">
           <Link href="/data">
             <Filter className="mr-2 h-4 w-4" />
             Browse Publishers
           </Link>
         </Button>
         {userRole === "ADMIN" && (
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild className="w-full sm:w-auto">
             <Link href="/admin">
               <Shield className="mr-2 h-4 w-4" />
               Admin Panel
@@ -175,7 +175,7 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
       </div>
       
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
@@ -283,14 +283,14 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
                   : null
                 
                 return (
-                  <div key={order.id} className="group flex items-center justify-between p-6 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-lg transition-all duration-300 bg-white">
-                    <div className="flex items-center space-x-4 flex-1">
+                  <div key={order.id} className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-lg transition-all duration-300 bg-white gap-4">
+                    <div className="flex items-start sm:items-center space-x-4 flex-1 w-full sm:w-auto">
                       <div className="flex-shrink-0 p-3 rounded-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
-                        <StatusIcon className="h-6 w-6 text-gray-700" />
+                        <StatusIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <p className="font-semibold text-lg text-gray-900">Order #{order.id.slice(-8)}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                          <p className="font-semibold text-base sm:text-lg text-gray-900">Order #{order.id.slice(-8)}</p>
                           {latestTransaction && (
                             <Badge 
                               variant="outline" 
@@ -303,7 +303,7 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
                         <p className="text-sm text-gray-600 mb-2 font-medium">
                           {order.items.length} item{order.items.length !== 1 ? 's' : ''} • {formatCurrency(order.totalAmount, order.currency)}
                         </p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-gray-500">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {format(new Date(order.createdAt), 'MMM dd, yyyy')}
@@ -311,21 +311,21 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
                           {order.items.length > 0 && (
                             <span className="flex items-center gap-1">
                               <ShoppingCart className="h-3 w-3" />
-                              {order.items[0].siteName}{order.items.length > 1 && ` +${order.items.length - 1} more`}
+                              <span className="truncate">{order.items[0].siteName}{order.items.length > 1 && ` +${order.items.length - 1} more`}</span>
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge className={`${statusConfig[order.status].color} font-semibold px-3 py-1`}>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                      <Badge className={`${statusConfig[order.status].color} font-semibold px-3 py-1 text-center sm:text-left`}>
                         {statusConfig[order.status].label}
                       </Badge>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openOrderDetails(order)}
-                        className="border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                        className="border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors w-full sm:w-auto"
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         Details
@@ -350,13 +350,13 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
 
       {/* Order Details Modal */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-hidden">
+        <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-[85vw] lg:max-w-[80vw] max-h-[95vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <Receipt className="h-5 w-5" />
               Order Details
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               Complete information about your order and transactions
             </DialogDescription>
           </DialogHeader>
@@ -365,7 +365,7 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
             <div className="overflow-y-auto max-h-[80vh] pr-2">
               <div className="space-y-6">
                 {/* Order Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6 bg-gray-50 rounded-xl border">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 p-4 sm:p-6 bg-gray-50 rounded-xl border">
                 <div className="text-center p-4 bg-white rounded-lg">
                   <p className="text-sm font-medium text-gray-600 mb-2">Order ID</p>
                   <p className="text-sm font-mono text-gray-900 font-semibold">{selectedOrder.id}</p>
@@ -387,7 +387,7 @@ export function DashboardContent({ user, userRole }: DashboardContentProps) {
               </div>
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                 <div className="text-center p-6 bg-gray-50 rounded-xl border">
                   <div className="p-3 bg-gray-200 rounded-full w-fit mx-auto mb-3">
                     <ShoppingCart className="h-6 w-6 text-gray-700" />

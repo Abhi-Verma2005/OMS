@@ -45,19 +45,19 @@ const stats = [
 
 export function HeroStatsCards() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 stagger-children">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 stagger-children">
       {stats.map((stat, index) => (
         <Card key={stat.title} className="card-modern hover-lift group anim-card-in relative overflow-hidden">
-          <CardContent className="p-8">
-            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${stat.bgColor} border ${stat.borderColor} mb-6 group-hover:scale-110 transition-all duration-300`}>
-              <stat.icon className={`w-8 h-8 ${stat.color}`} />
+          <CardContent className="p-4 sm:p-6 lg:p-8">
+            <div className={`inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-2xl ${stat.bgColor} border ${stat.borderColor} mb-4 sm:mb-6 group-hover:scale-110 transition-all duration-300`}>
+              <stat.icon className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 ${stat.color}`} />
             </div>
-            <div className="space-y-3">
-              <p className="text-3xl font-bold tracking-tight text-foreground group-hover:scale-105 transition-transform duration-300" 
+            <div className="space-y-2 sm:space-y-3">
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground group-hover:scale-105 transition-transform duration-300" 
                  style={{ animationDelay: `${index * 0.1}s` }}>
                 {stat.value}
               </p>
-              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors duration-300">{stat.title}</p>
+              <p className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors duration-300">{stat.title}</p>
               <p className="text-xs text-muted-foreground">{stat.description}</p>
             </div>
             {/* Gradient overlay on hover */}

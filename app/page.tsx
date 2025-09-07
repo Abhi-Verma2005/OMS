@@ -26,14 +26,14 @@ export default async function Page() {
             <span className="text-sm font-medium text-primary">Next-Gen Publisher Platform</span>
           </div>
           
-          <h1 className="text-6xl md:text-8xl font-bold text-foreground leading-tight anim-page-in">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-bold text-foreground leading-tight anim-page-in">
             Publisher Directory
-            <span className="block text-5xl md:text-7xl mt-4 bg-gradient-primary bg-clip-text text-transparent">
+            <span className="block text-3xl sm:text-5xl md:text-7xl mt-2 sm:mt-4 bg-gradient-primary bg-clip-text text-transparent">
               Reimagined
             </span>
           </h1>
           
-          <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed anim-fade-in" style={{animationDelay: '0.2s'}}>
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed anim-fade-in px-4" style={{animationDelay: '0.2s'}}>
             Discover premium publishers with cutting-edge analytics. Access real-time domain authority, 
             traffic insights, competitive pricing, and advanced publishing requirements—all in one powerful platform.
           </p>
@@ -74,7 +74,7 @@ export default async function Page() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20 stagger-children">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-20 stagger-children px-4">
           <Card className="card-modern hover-lift group anim-card-in">
             <CardHeader className="pb-6">
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
@@ -129,37 +129,37 @@ export default async function Page() {
             </CardHeader>
             
             <CardContent className="pb-12">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 stagger-children">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 stagger-children">
                 <div className="text-center group anim-card-in">
-                  <div className="text-5xl md:text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <div className="text-3xl sm:text-5xl md:text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
                     2.5K+
                   </div>
-                  <div className="text-muted-foreground text-sm uppercase tracking-wider font-medium">Active Publishers</div>
-                  <div className="w-16 h-1 bg-gradient-primary rounded-full mx-auto mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="text-muted-foreground text-xs sm:text-sm uppercase tracking-wider font-medium">Active Publishers</div>
+                  <div className="w-12 sm:w-16 h-1 bg-gradient-primary rounded-full mx-auto mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
                 
                 <div className="text-center group anim-card-in">
-                  <div className="text-5xl md:text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <div className="text-3xl sm:text-5xl md:text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
                     85+
                   </div>
-                  <div className="text-muted-foreground text-sm uppercase tracking-wider font-medium">Global Markets</div>
-                  <div className="w-16 h-1 bg-gradient-primary rounded-full mx-auto mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="text-muted-foreground text-xs sm:text-sm uppercase tracking-wider font-medium">Global Markets</div>
+                  <div className="w-12 sm:w-16 h-1 bg-gradient-primary rounded-full mx-auto mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
                 
                 <div className="text-center group anim-card-in">
-                  <div className="text-5xl md:text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <div className="text-3xl sm:text-5xl md:text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
                     25+
                   </div>
-                  <div className="text-muted-foreground text-sm uppercase tracking-wider font-medium">Languages</div>
-                  <div className="w-16 h-1 bg-gradient-primary rounded-full mx-auto mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="text-muted-foreground text-xs sm:text-sm uppercase tracking-wider font-medium">Languages</div>
+                  <div className="w-12 sm:w-16 h-1 bg-gradient-primary rounded-full mx-auto mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
                 
                 <div className="text-center group anim-card-in">
-                  <div className="text-5xl md:text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <div className="text-3xl sm:text-5xl md:text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
                     50+
                   </div>
-                  <div className="text-muted-foreground text-sm uppercase tracking-wider font-medium">Industry Verticals</div>
-                  <div className="w-16 h-1 bg-gradient-primary rounded-full mx-auto mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="text-muted-foreground text-xs sm:text-sm uppercase tracking-wider font-medium">Industry Verticals</div>
+                  <div className="w-12 sm:w-16 h-1 bg-gradient-primary rounded-full mx-auto mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
               </div>
             </CardContent>
@@ -167,11 +167,11 @@ export default async function Page() {
         </div>
 
         {/* Call to Action */}
-        <div className="text-center mt-20 space-y-8 anim-fade-in">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+        <div className="text-center mt-20 space-y-8 anim-fade-in px-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
             Ready to Transform Your Campaigns?
           </h2>
-          <p className="text-muted-foreground text-xl max-w-3xl mx-auto leading-relaxed">
+          <p className="text-muted-foreground text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed">
             Join thousands of marketers who trust OMS for their publisher discovery and campaign optimization.
           </p>
           {!isAuthenticated && (

@@ -69,12 +69,12 @@ export function MainNav() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-all duration-300 group">
-              <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-modern group-hover:shadow-modern-lg transition-all duration-300 group-hover:scale-105">
-                <FileStack className="w-5 h-5 text-primary-foreground" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <Link href="/" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-all duration-300 group">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-modern group-hover:shadow-modern-lg transition-all duration-300 group-hover:scale-105">
+                <FileStack className="w-4 h-4 md:w-5 md:h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
+              <span className="text-lg md:text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
                 OMS
               </span>
             </Link>
@@ -105,13 +105,13 @@ export function MainNav() {
           </nav>
 
           {/* Right side actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             {isAuthenticated && !isAdmin && (
               <Link href="/cart">
-                <Button variant="ghost" size="sm" className="relative p-3 rounded-xl hover:bg-accent/50 transition-all duration-300 hover:scale-105">
+                <Button variant="ghost" size="sm" className="relative p-2 md:p-3 rounded-xl hover:bg-accent/50 transition-all duration-300 hover:scale-105">
                   <ShoppingCart className="w-4 h-4" />
                   {cartItemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold shadow-modern">
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 md:h-5 md:w-5 flex items-center justify-center font-semibold shadow-modern">
                       {cartItemCount}
                     </span>
                   )}

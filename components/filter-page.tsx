@@ -2023,13 +2023,13 @@ export default function CompactFilterPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="min-w-full">
                   <TableHeader>
                     <TableRow className="border-gray-200 dark:border-gray-800">
                       {visibleColumns.map(columnKey => {
                         const column = allColumns.find(col => col.key === columnKey)
                         return (
-                          <TableHead key={columnKey} className="text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                          <TableHead key={columnKey} className="text-gray-600 dark:text-gray-300 whitespace-nowrap text-xs sm:text-sm">
                             {column?.label}
                           </TableHead>
                         )
@@ -2065,8 +2065,9 @@ export default function CompactFilterPage() {
                               <TableCell 
                                 key={columnKey} 
                                 className={cn(
-                                  isNiche ? 'max-w-[320px] whitespace-normal break-words' : 'whitespace-nowrap',
-                                  rowLevel !== 'custom' ? rowPaddingByLevel[rowLevel] : ''
+                                  isNiche ? 'max-w-[200px] sm:max-w-[320px] whitespace-normal break-words' : 'whitespace-nowrap',
+                                  rowLevel !== 'custom' ? rowPaddingByLevel[rowLevel] : '',
+                                  'text-xs sm:text-sm'
                                 )}
                               >
                                 {renderColumnCell(site, columnKey)}
@@ -2096,12 +2097,12 @@ export default function CompactFilterPage() {
 
       {/* Site Details Modal */}
       <Dialog open={detailsOpen} onOpenChange={(open) => !loading && setDetailsOpen(open)}>
-        <DialogContent className="sm:max-w-[90vw] md:max-w-[85vw] lg:max-w-[80vw] max-h-[85vh] flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 p-0">
+        <DialogContent className="w-[95vw] sm:max-w-[90vw] md:max-w-[85vw] lg:max-w-[80vw] max-h-[95vh] flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-gray-200 dark:border-gray-700 p-0">
           {/* Fixed Header */}
-          <DialogHeader className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+          <DialogHeader className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 py-4">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <DialogTitle className="text-xl font-semibold truncate">
+                <DialogTitle className="text-lg sm:text-xl font-semibold truncate">
                   {loading ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -2111,7 +2112,7 @@ export default function CompactFilterPage() {
                     selectedSite?.name
                   )}
                 </DialogTitle>
-                <DialogDescription className="text-gray-600 dark:text-gray-400 text-sm mt-1 truncate">
+                <DialogDescription className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mt-1 truncate">
                   {selectedSite?.url}
                 </DialogDescription>
               </div>
@@ -2119,7 +2120,7 @@ export default function CompactFilterPage() {
           </DialogHeader>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
@@ -2142,8 +2143,8 @@ export default function CompactFilterPage() {
 // Helper Components
 function SiteDetails({ site }: { site: Site }) {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <InfoCard title="Basic Information">
           <InfoItem label="URL" value={site.url} />
           <div className="flex justify-between items-start">
@@ -2206,9 +2207,9 @@ function SiteDetails({ site }: { site: Site }) {
           <InfoItem label="Remark" value={site.quality.remark || "N/A"} />
         </InfoCard>
       </div>
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-center sm:justify-end">
         <Button
-          className="bg-yellow-400 text-gray-900 hover:bg-yellow-300"
+          className="bg-yellow-400 text-gray-900 hover:bg-yellow-300 w-full sm:w-auto"
           onClick={() => {
             const params = new URLSearchParams()
             params.set('siteId', site.id)
@@ -2241,9 +2242,9 @@ function InfoCard({ title, children }: { title: string; children: ReactNode }) {
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-start">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-0">
       <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">{label}</span>
-      <span className="text-xs text-gray-900 dark:text-white text-right ml-2 break-words">{value}</span>
+      <span className="text-xs text-gray-900 dark:text-white sm:text-right break-words">{value}</span>
     </div>
   )
 }

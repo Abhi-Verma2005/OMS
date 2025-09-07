@@ -74,7 +74,7 @@ export function PageLayout({
             </div>
           </header>
           
-          <main className={`flex-1 px-6 py-8 overflow-y-auto ${className}`}>
+          <main className={`flex-1 px-4 md:px-6 py-4 md:py-8 overflow-y-auto ${className}`}>
             {children}
           </main>
         </div>
