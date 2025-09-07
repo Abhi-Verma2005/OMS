@@ -134,12 +134,15 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
       </nav>
 
       {/* Bottom section with user menu and theme toggle */}
-      <div className="border-t border-gray-200 dark:border-gray-800 p-4 space-y-2 flex-shrink-0">
-        <div className={cn("flex", isCollapsed ? "justify-center" : "flex-col space-y-2")}>
+      <div className="border-t border-gray-200 dark:border-gray-800 p-4 flex-shrink-0">
+        <div
+          className={cn(
+            // Always use a single horizontal row and center the items
+            "flex items-center justify-center gap-3"
+          )}
+        >
           <UserMenu />
-          <div className={cn("flex", isCollapsed ? "justify-center" : "justify-center")}>
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </div>
       </div>
     </div>

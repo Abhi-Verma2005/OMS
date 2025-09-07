@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -238,6 +238,8 @@ export default function CompactFilterPage() {
   const [error, setError] = useState<string | null>(null)
   const { addItem, isItemInCart } = useCart()
   const [lastFetched, setLastFetched] = useState<Date | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [views, setViews] = useState<Array<{ id: string; name: string; filters: any }>>([])
   const [viewName, setViewName] = useState<string>("")
   const [savingView, setSavingView] = useState<boolean>(false)
@@ -305,9 +307,16 @@ export default function CompactFilterPage() {
 
   
 
-  // Fetch data from API
-  const fetchData = async (apiFilters: APIFilters = {}) => {
-    setLoading(true)
+  // Fetch data from API with protection against multiple simultaneous calls
+  const fetchData = async (apiFilters: APIFilters = {}, skipLoadingState = false) => {
+    // Prevent multiple simultaneous calls
+    if (loading && !skipLoadingState) {
+      return
+    }
+    
+    if (!skipLoadingState) {
+      setLoading(true)
+    }
     setError(null)
     
     try {
@@ -336,14 +345,39 @@ export default function CompactFilterPage() {
       setError(errorMessage)
       setSites([])
     } finally {
-      setLoading(false)
+      if (!skipLoadingState) {
+        setLoading(false)
+      }
     }
   }
 
   
 
-  // Load initial data
+  // Unified debounced fetch function to prevent multiple API calls
+  const debouncedFetch = useCallback((apiFilters: APIFilters, delay = 300) => {
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current)
+    }
+    
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchData(apiFilters)
+    }, delay)
+  }, [])
+
+  // Initialize from URL and load initial data
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get('q') || ''
+    
+    // Set search query from URL if present
+    if (q) {
+      setSearchQuery(q)
+    }
+    
+    // Mark as initialized and fetch initial data
+    setIsInitialized(true)
     fetchData()
   }, [])
 
@@ -389,25 +423,20 @@ export default function CompactFilterPage() {
     return () => clearTimeout(timeoutId)
   }, [nicheSearch])
 
-  // Debounced filter update to avoid too many API calls
+  // Unified effect for filters and search - only trigger after initialization
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const apiFilters = convertFiltersToAPI(filters)
-      fetchData(apiFilters)
-    }, 500) // 500ms delay
+    if (!isInitialized) return
+    
+    const apiFilters = convertFiltersToAPI(filters)
+    debouncedFetch(apiFilters, 500) // 500ms delay for filters
+  }, [filters, isInitialized, debouncedFetch])
 
-    return () => clearTimeout(timeoutId)
-  }, [filters])
-
-  // Debounced search query update to query API as user types
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const apiFilters = convertFiltersToAPI(filters)
-      fetchData(apiFilters)
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery])
+    if (!isInitialized) return
+    
+    const apiFilters = convertFiltersToAPI(filters)
+    debouncedFetch(apiFilters, 300) // 300ms delay for search
+  }, [searchQuery, isInitialized, debouncedFetch])
 
   const results = useMemo(() => {
     const filtered = applyFilters(sites, filters)
@@ -417,14 +446,6 @@ export default function CompactFilterPage() {
       s.name.toLowerCase().includes(q) || s.url.toLowerCase().includes(q)
     )
   }, [sites, filters, searchQuery])
-
-  // Initialize search from URL (?q=...)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const params = new URLSearchParams(window.location.search)
-    const q = params.get('q') || ''
-    if (q) setSearchQuery(q)
-  }, [])
 
   // Persist search to URL without navigation
   useEffect(() => {
@@ -437,6 +458,15 @@ export default function CompactFilterPage() {
     }
     window.history.replaceState({}, '', url.toString())
   }, [searchQuery])
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current)
+      }
+    }
+  }, [])
   
   const availableCountries = useMemo(() => {
     const set = new Set<string>()
@@ -1699,7 +1729,12 @@ export default function CompactFilterPage() {
               </div>
               <Button 
                 variant="outline" 
-                onClick={() => fetchData(convertFiltersToAPI(filters))} 
+                onClick={() => {
+                  if (fetchTimeoutRef.current) {
+                    clearTimeout(fetchTimeoutRef.current)
+                  }
+                  fetchData(convertFiltersToAPI(filters))
+                }} 
                 disabled={loading}
                 className="h-7 text-xs"
               >
@@ -1849,7 +1884,12 @@ export default function CompactFilterPage() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => fetchData(convertFiltersToAPI(filters))}
+                onClick={() => {
+                  if (fetchTimeoutRef.current) {
+                    clearTimeout(fetchTimeoutRef.current)
+                  }
+                  fetchData(convertFiltersToAPI(filters))
+                }}
                 className="mt-2 border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/20"
               >
                 Try Again
