@@ -32,7 +32,7 @@ export default async function SignInPage() {
             <span className="text-sm font-medium text-primary">Secure Access</span>
           </div>
           <h1 className="text-3xl font-bold text-foreground">Welcome back</h1>
-          <p className="text-muted-foreground">Sign in to your account to continue</p>
+          <p className="text-muted-foreground">Sign in to your OMS account to continue</p>
         </div>
         
         <Card className="card-modern shadow-modern-xl anim-scale-in">
